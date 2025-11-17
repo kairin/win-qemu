@@ -119,6 +119,9 @@ __pycache__/
 /build/
 /dist/
 
+# Installation state (contains timestamps, system-specific data)
+.installation-state/
+
 # ==============================================================================
 # ALLOW LIST (IMPORTANT TO COMMIT)
 # ==============================================================================
