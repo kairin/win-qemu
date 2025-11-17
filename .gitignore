@@ -1,0 +1,136 @@
+# win-qemu .gitignore - QEMU/KVM Windows Virtualization
+
+# ==============================================================================
+# SENSITIVE DATA (NEVER COMMIT)
+# ==============================================================================
+
+# Environment files (API keys, secrets)
+.env
+.env.*
+*.env
+
+# Credentials and keys
+*credentials*
+*secret*
+*key
+*token
+*.pem
+*.key
+
+# Email files (may contain sensitive data)
+*.eml
+*.msg
+
+# Outlook PST files (large, contain email data)
+*.pst
+*.ost
+
+# ==============================================================================
+# VM IMAGES & ISOs (TOO LARGE FOR GIT)
+# ==============================================================================
+
+# Windows ISOs (4-6GB each)
+*.iso
+
+# Installer executables and packages (redistributable, not source)
+*.exe
+*.deb
+*.rpm
+*.msi
+
+# VM disk images
+*.qcow2
+*.img
+*.vdi
+*.vmdk
+*.vhd
+*.vhdx
+
+# VM snapshots
+*.qcow2.snapshot
+*.snapshot
+
+# ==============================================================================
+# LIBVIRT/QEMU RUNTIME FILES
+# ==============================================================================
+
+# VM state files
+*.save
+*.state
+*.mem
+
+# TPM state
+*.tpm
+tpm/
+
+# NVRAM files
+*.nvram
+
+# ==============================================================================
+# LINUX TEMPORARY FILES
+# ==============================================================================
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Log files
+*.log
+logs/
+
+# ==============================================================================
+# DEVELOPMENT TOOLS
+# ==============================================================================
+
+# IDE/Editor directories
+.vscode/
+.idea/
+*.sublime-*
+
+# Python virtual environments
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# ==============================================================================
+# BACKUP FILES
+# ==============================================================================
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# ==============================================================================
+# DIRECTORIES (USER-SPECIFIC)
+# ==============================================================================
+
+# User's VM storage directories (if symlinked into repo)
+/VMs/
+/ISOs/
+/outlook-data/
+
+# Build artifacts
+/build/
+/dist/
+
+# ==============================================================================
+# ALLOW LIST (IMPORTANT TO COMMIT)
+# ==============================================================================
+
+# Always allow these critical files
+!.gitignore
+!AGENTS.md
+!CLAUDE.md
+!GEMINI.md
+!.claude/
+!*.sh
+!*.md
+!*.xml
+!*.yaml
+!*.yml
