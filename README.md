@@ -8,28 +8,28 @@
 
 ---
 
-## =� Project Status Dashboard
+## 📊 Project Status Dashboard
 
 ```
-=� PROJECT STATUS (2025-11-17)
+📊 PROJECT STATUS (2025-11-17)
 
-Repository Setup:         100% Complete
-Documentation:            100% Complete (45+ files)
-Hardware Verification:    100% Complete (Excellent)
-Software Installation:   L   0% Complete (NEXT STEP)
-VM Creation:             �   Pending (after software)
-Performance Tuning:      �   Pending
-Security Hardening:      �   Pending
-Production Ready:        �   Pending
+✅ Repository Setup:        100% Complete
+✅ Documentation:           100% Complete (45+ files)
+✅ Hardware Verification:   100% Complete (Excellent)
+❌ Software Installation:     0% Complete (NEXT STEP)
+⏸️  VM Creation:            Pending (after software)
+⏸️  Performance Tuning:     Pending
+⏸️  Security Hardening:     Pending
+⏸️  Production Ready:       Pending
 
-Overall Progress: [����������] 35% (Infrastructure Complete)
+Overall Progress: [████░░░░░░] 35% (Infrastructure Complete)
 Next Milestone: Software Installation (Phases 1-2)
 Estimated Time to VM Ready: 3-4 hours
 ```
 
 ---
 
-## <� What This Project Does
+## 🎯 What This Project Does
 
 **The Problem**: You need to run Microsoft 365 Outlook desktop application on Ubuntu because:
 - Graph API access is blocked by your organization
@@ -52,7 +52,7 @@ Estimated Time to VM Ready: 3-4 hours
 
 ---
 
-## =� Quick Start: When You Get Home
+## 🚀 Quick Start: When You Get Home
 
 **Total Time**: 3-4 hours (first-time setup)
 
@@ -62,24 +62,20 @@ cd /home/kkk/Apps/win-qemu
 cat docs-repo/pre-installation-readiness-report.md
 ```
 
-### Step 2: Resume VirtIO ISO Download (15 minutes)
-```bash
-cd /home/kkk/Apps/win-qemu/source-iso
-# Download should auto-resume from 33%
-wget -c https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso
-```
+### Step 2: Resume VirtIO ISO Download (COMPLETE ✅)
+**Status**: VirtIO ISO is now 100% downloaded and ready to use!
 
-### Step 3: Execute Installation (Option B - Semi-Automated, 1-1.5 hours)
+### Step 3: Execute Installation (Semi-Automated, 1-1.5 hours)
 ```bash
 cd /home/kkk/Apps/win-qemu
 sudo ./scripts/install-master.sh
 
 # What this does:
-#  Installs all QEMU/KVM packages (10 mandatory)
-#  Configures user groups (libvirt, kvm)
-#  Enables virtualization services
-#  Creates required directories
-#  Validates installation
+# ✅ Installs all QEMU/KVM packages (10 mandatory)
+# ✅ Configures user groups (libvirt, kvm)
+# ✅ Enables virtualization services
+# ✅ Creates required directories
+# ✅ Validates installation
 ```
 
 **IMPORTANT**: Script will prompt for reboot when complete
@@ -113,38 +109,36 @@ cat outlook-linux-guide/05-qemu-kvm-reference-architecture.md
 
 ---
 
-## � Outstanding Issues to Resolve
+## ⚠️ Outstanding Issues to Resolve
 
 **From Pre-Installation Readiness Assessment** (2025-11-17):
 
-### =4 CRITICAL (Blocks VM Creation)
-1. **L QEMU/KVM Packages Not Installed**
+### 🔴 CRITICAL (Blocks VM Creation)
+1. **❌ QEMU/KVM Packages Not Installed**
    - **Impact**: Cannot create or run virtual machines
    - **Solution**: Run `sudo ./scripts/install-master.sh`
    - **Time**: 1-1.5 hours
    - **Status**: NEXT STEP
 
-2. **L VirtIO Drivers ISO Incomplete**
-   - **Impact**: Cannot install Windows with optimal performance
-   - **Solution**: Resume download (33% � 100%)
-   - **Time**: 15 minutes
-   - **Status**: Download paused, will auto-resume
+2. **✅ VirtIO Drivers ISO** (RESOLVED)
+   - **Status**: 100% Complete and ready to use
+   - **Location**: `/home/kkk/Apps/win-qemu/source-iso/virtio-win-0.1.285-1.iso`
 
-### =� HIGH PRIORITY (Required for Production)
-3. **� User Groups Not Configured**
+### 🟡 HIGH PRIORITY (Required for Production)
+3. **⚠️ User Groups Not Configured**
    - **Impact**: Permission errors when managing VMs
    - **Solution**: Handled by install-master.sh + reboot
    - **Time**: 5 minutes + reboot
    - **Status**: Will be fixed in Step 3
 
-4. **� UFW Firewall Not Configured**
+4. **⚠️ UFW Firewall Not Configured**
    - **Impact**: Security risk, unrestricted network access
    - **Solution**: Run configure-firewall.sh (to be created)
    - **Time**: 20 minutes
    - **Status**: Deferred to Step 6
 
-### =� MEDIUM PRIORITY (Can Defer)
-5. **� LUKS Encryption Not Configured**
+### 🟢 MEDIUM PRIORITY (Can Defer)
+5. **⚠️ LUKS Encryption Not Configured**
    - **Impact**: PST files not encrypted at rest
    - **Solution**: Follow security hardening guide (Phase 6)
    - **Time**: 2-3 hours
@@ -152,7 +146,7 @@ cat outlook-linux-guide/05-qemu-kvm-reference-architecture.md
 
 ---
 
-## =� Key Learning: Docker vs Bare-Metal
+## 🚫 Key Learning: Docker vs Bare-Metal
 
 ### Why NOT Docker for QEMU/KVM
 
@@ -160,18 +154,18 @@ After comprehensive research using Context7 (verified against QEMU official docs
 
 | Criterion | Docker Container | Bare-Metal (Recommended) |
 |-----------|------------------|--------------------------|
-| **Performance** | 50-70% native (degraded) | 85-95% native (excellent) |
-| **Security** | Requires `--privileged` (compromised isolation) | Full isolation with AppArmor/SELinux |
-| **Hardware Access** | Limited `/dev/kvm` access, nested virt overhead | Direct hardware virtualization (VT-x/AMD-V) |
-| **TPM 2.0 Support** | L Broken/unsupported |  Fully functional (swtpm) |
-| **UEFI Support** | � Limited |  Full OVMF support |
-| **Complexity** | =4 High (nested virtualization, device passthrough) | =� Standard (well-documented) |
-| **Industry Practice** | L Not used in production virtualization |  AWS, Azure, GCP standard |
-| **Installation** | =4 Complex workarounds, fragile | =� Straightforward `apt install` |
-| **Maintainability** | =4 Poor (custom scripts, kernel modules) | =� Excellent (standard libvirt tools) |
-| **Resource Overhead** | =4 Higher (Docker + QEMU layers) | =� Optimal (direct KVM) |
+| **Performance** | 50-70% native (degraded) | ✅ **85-95% native** (excellent) |
+| **Security** | Requires `--privileged` (compromised) | ✅ Full AppArmor/SELinux isolation |
+| **Hardware Access** | Limited `/dev/kvm`, nested virt overhead | ✅ Direct VT-x/AMD-V access |
+| **TPM 2.0 Support** | ❌ Broken/unsupported | ✅ Fully functional (swtpm) |
+| **UEFI Support** | ⚠️ Limited | ✅ Full OVMF support |
+| **Complexity** | 🔴 High (nested virtualization) | ✅ Standard (well-documented) |
+| **Industry Practice** | ❌ Not used in production | ✅ AWS, Azure, GCP standard |
+| **Installation** | 🔴 Complex workarounds | ✅ Simple `apt install` |
+| **Maintainability** | 🔴 Poor (fragile) | ✅ Excellent (libvirt tools) |
+| **Resource Overhead** | 🔴 Higher (Docker + QEMU) | ✅ Optimal (direct KVM) |
 
-### Decision:  ALWAYS Bare-Metal, =� NEVER Docker
+### Decision: ✅ ALWAYS Bare-Metal, ❌ NEVER Docker
 
 **Rationale** (Context7 verified):
 1. **QEMU official documentation** explicitly recommends bare-metal for production
@@ -189,62 +183,57 @@ After comprehensive research using Context7 (verified against QEMU official docs
 
 ---
 
-## =� Large Files Not Included in Repository
+## 📦 Large Files Not Included in Repository
 
 **These files are excluded by `.gitignore` due to size limitations:**
 
-###  Already Downloaded (Ready to Use)
+### ✅ Already Downloaded (Ready to Use)
 1. **Windows 11 ISO** (7.7 GB)
    - Location: `/home/kkk/Apps/win-qemu/source-iso/Win11_25H2_English_x64.iso`
-   - Status:  Complete
+   - Status: ✅ Complete
    - Download: https://www.microsoft.com/software-download/windows11
 
-2. **Office Setup** (7.5 MB)
+2. **VirtIO Drivers ISO** (514 MB)
+   - Location: `/home/kkk/Apps/win-qemu/source-iso/virtio-win-0.1.285-1.iso`
+   - Status: ✅ Complete (100%)
+   - Download: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/
+
+3. **Office Setup** (7.5 MB)
    - Location: `/home/kkk/Apps/win-qemu/source-iso/OfficeSetup.exe`
-   - Status:  Complete
+   - Status: ✅ Complete
    - Download: https://www.office.com/setup
 
-3. **CrossOver** (197 MB) - OPTIONAL
+4. **CrossOver** (197 MB) - OPTIONAL
    - Location: `/home/kkk/Apps/win-qemu/source-iso/crossover_25.1.0-1.deb`
-   - Status:  Complete (not needed for QEMU/KVM approach)
-
-### � Downloading (Resume Required)
-4. **VirtIO Drivers ISO** (~500 MB)
-   - Location: `/home/kkk/Apps/win-qemu/source-iso/virtio-win-0.1.285-1.iso`
-   - Status: � 33% Complete (will auto-resume with `wget -c`)
-   - Download: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/
+   - Status: ✅ Complete (not needed for QEMU/KVM approach)
 
 **Complete documentation**: `source-iso/README.md`
 
 ---
 
-## <� Installation Phases Overview
+## 🏗️ Installation Phases Overview
 
 ### Phase 1: Critical Dependencies (1-1.5 hours) - NEXT STEP
 **Goal**: Install QEMU/KVM stack and configure system
 
 **Tasks**:
-1.  Download VirtIO ISO (15 min) - Resume from 33%
-2.  Install QEMU/KVM packages (45 min) - `sudo ./scripts/install-master.sh`
-3.  Configure user groups (5 min) - Automated by script
-4.  Reboot system (5 min) - **REQUIRED**
-5.  Verify installation (10 min) - `virsh version`, `systemctl status libvirtd`
-6.  Create directories (1 min) - Automated by script
+1. ✅ Download VirtIO ISO - **COMPLETE**
+2. ❌ Install QEMU/KVM packages (45 min) - `sudo ./scripts/install-master.sh`
+3. ❌ Configure user groups (5 min) - Automated by script
+4. ❌ Reboot system (5 min) - **REQUIRED**
+5. ❌ Verify installation (10 min) - `virsh version`, `systemctl status libvirtd`
+6. ✅ Create directories - **COMPLETE**
 
 **Commands**:
 ```bash
-# Step 1: Resume VirtIO download
-cd /home/kkk/Apps/win-qemu/source-iso
-wget -c https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso
-
-# Step 2: Install QEMU/KVM (ONE COMMAND)
+# Execute installation (ONE COMMAND)
 cd /home/kkk/Apps/win-qemu
 sudo ./scripts/install-master.sh
 
-# Step 3: Reboot (REQUIRED after installation)
+# Reboot (REQUIRED after installation)
 sudo reboot
 
-# Step 4: Verify (after reboot)
+# Verify (after reboot)
 virsh version
 systemctl status libvirtd
 groups | grep -E 'libvirt|kvm'
@@ -256,10 +245,10 @@ groups | grep -E 'libvirt|kvm'
 **Goal**: Configure UFW firewall with M365 whitelist
 
 **Tasks**:
-1.  Install UFW (if not present)
-2.  Configure M365 endpoint whitelist
-3.  Enable firewall with egress filtering
-4.  Verify connectivity to Outlook servers
+1. Install UFW (if not present)
+2. Configure M365 endpoint whitelist
+3. Enable firewall with egress filtering
+4. Verify connectivity to Outlook servers
 
 **Commands**:
 ```bash
@@ -273,12 +262,12 @@ sudo ./scripts/configure-firewall.sh
 **Goal**: Create Windows 11 VM with Q35, UEFI, TPM 2.0
 
 **Tasks**:
-1.  Run virt-install with optimal configuration
-2.  Load VirtIO storage driver during Windows installation
-3.  Complete Windows setup
-4.  Install post-installation VirtIO drivers
-5.  Activate Windows with valid license
-6.  Install Windows updates
+1. Run virt-install with optimal configuration
+2. Load VirtIO storage driver during Windows installation
+3. Complete Windows setup
+4. Install post-installation VirtIO drivers
+5. Activate Windows with valid license
+6. Install Windows updates
 
 **Reference**: `outlook-linux-guide/05-qemu-kvm-reference-architecture.md`
 
@@ -288,11 +277,11 @@ sudo ./scripts/configure-firewall.sh
 **Goal**: Achieve 85-95% native Windows performance
 
 **Tasks**:
-1.  Apply 14 Hyper-V enlightenments
-2.  Configure CPU pinning
-3.  Enable huge pages
-4.  Optimize VirtIO drivers
-5.  Benchmark and validate performance
+1. Apply 14 Hyper-V enlightenments
+2. Configure CPU pinning
+3. Enable huge pages
+4. Optimize VirtIO drivers
+5. Benchmark and validate performance
 
 **Reference**: `outlook-linux-guide/09-performance-optimization-playbook.md`
 
@@ -307,11 +296,11 @@ sudo ./scripts/configure-firewall.sh
 **Goal**: Configure virtio-fs and QEMU guest agent
 
 **Tasks**:
-1.  Configure virtio-fs in VM XML (read-only mode)
-2.  Install WinFsp in Windows guest
-3.  Mount shared folder as Z: drive
-4.  Install QEMU guest agent
-5.  Test host-guest communication
+1. Configure virtio-fs in VM XML (read-only mode)
+2. Install WinFsp in Windows guest
+3. Mount shared folder as Z: drive
+4. Install QEMU guest agent
+5. Test host-guest communication
 
 **Reference**: `outlook-linux-guide/06-seamless-bridge-integration.md`
 
@@ -321,18 +310,18 @@ sudo ./scripts/configure-firewall.sh
 **Goal**: Complete 60+ item security checklist
 
 **Tasks**:
-1.  LUKS encryption for host partition
-2.  Enforce virtio-fs read-only mode (ransomware protection)
-3.  Enable BitLocker in Windows guest
-4.  Configure Windows Defender
-5.  Set up automated backups
-6.  Apply AppArmor/SELinux profiles
+1. LUKS encryption for host partition
+2. Enforce virtio-fs read-only mode (ransomware protection)
+3. Enable BitLocker in Windows guest
+4. Configure Windows Defender
+5. Set up automated backups
+6. Apply AppArmor/SELinux profiles
 
 **Reference**: `research/06-security-hardening-analysis.md`
 
 ---
 
-## =� Proposed Installation Commands
+## 💻 Proposed Installation Commands
 
 **Complete command sequence for Phase 1**:
 
@@ -344,12 +333,7 @@ sudo ./scripts/configure-firewall.sh
 # Navigate to project
 cd /home/kkk/Apps/win-qemu
 
-# Step 1: Resume VirtIO ISO download (15 min)
-cd source-iso
-wget -c https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso
-cd ..
-
-# Step 2: Install QEMU/KVM packages (45 min)
+# Install QEMU/KVM packages (45 min)
 # This installs 10 mandatory packages:
 # - qemu-system-x86
 # - qemu-kvm
@@ -363,7 +347,7 @@ cd ..
 # - guestfs-tools
 sudo ./scripts/install-master.sh
 
-# Step 3: Reboot system (REQUIRED for group changes)
+# Reboot system (REQUIRED for group changes)
 sudo reboot
 
 # ============================================
@@ -383,7 +367,7 @@ virsh version
 systemctl status libvirtd
 
 # Expected output:
-# � libvirtd.service - Virtualization daemon
+# ● libvirtd.service - Virtualization daemon
 #    Loaded: loaded
 #    Active: active (running)
 
@@ -413,7 +397,7 @@ sudo ufw status verbose
 
 ---
 
-## > Multi-Agent System
+## 🤖 Multi-Agent System
 
 This project includes a **13-agent system** for intelligent automation:
 
@@ -439,73 +423,72 @@ This project includes a **13-agent system** for intelligent automation:
 **Natural Language Invocation** (Recommended):
 ```
 "Create a new Windows 11 VM with full optimization"
-� master-orchestrator coordinates multiple agents
+→ master-orchestrator coordinates multiple agents
 
 "Optimize my VM for best performance"
-� performance-optimization-specialist activates
+→ performance-optimization-specialist activates
 
 "Audit my VM security"
-� security-hardening-specialist runs 60+ checklist
+→ security-hardening-specialist runs 60+ checklist
 ```
 
 **Reference**: `.claude/agents/README.md` (complete documentation)
 
 ---
 
-## =� Documentation Structure
+## 📚 Documentation Structure
 
 ### Implementation Guides (Start Here)
 ```
 outlook-linux-guide/
-   00-README.md                              # Overview and guide structure
-   05-qemu-kvm-reference-architecture.md     # P Step-by-step VM setup
-   09-performance-optimization-playbook.md   # P Performance tuning
-   06-seamless-bridge-integration.md         # virtio-fs configuration
-   07-automation-engine.md                   # QEMU guest agent setup
+├── 00-README.md                              # Overview and guide structure
+├── 05-qemu-kvm-reference-architecture.md     # ⭐ Step-by-step VM setup
+├── 09-performance-optimization-playbook.md   # ⭐ Performance tuning
+├── 06-seamless-bridge-integration.md         # virtio-fs configuration
+└── 07-automation-engine.md                   # QEMU guest agent setup
 ```
 
 ### Research & Analysis (Deep Dive)
 ```
 research/
-   00-RESEARCH-INDEX.md                      # Complete research overview
-   01-hardware-requirements-analysis.md      # Hardware specifications
-   02-software-dependencies-analysis.md      # Software requirements
-   03-licensing-legal-compliance.md          # Legal and compliance
-   04-network-connectivity-requirements.md   # Network architecture
-   05-performance-optimization-research.md   # Performance deep dive
-   05-performance-quick-reference.md         # P Quick reference
-   06-security-hardening-analysis.md         # Security deep dive
-   07-troubleshooting-failure-modes.md       # Troubleshooting
+├── 00-RESEARCH-INDEX.md                      # Complete research overview
+├── 01-hardware-requirements-analysis.md      # Hardware specifications
+├── 02-software-dependencies-analysis.md      # Software requirements
+├── 03-licensing-legal-compliance.md          # Legal and compliance
+├── 04-network-connectivity-requirements.md   # Network architecture
+├── 05-performance-optimization-research.md   # Performance deep dive
+├── 05-performance-quick-reference.md         # ⭐ Quick reference
+├── 06-security-hardening-analysis.md         # Security deep dive
+└── 07-troubleshooting-failure-modes.md       # Troubleshooting
 ```
 
 ### Documentation Repository
 ```
 docs-repo/
-   INSTALLATION-GUIDE-BEGINNERS.md           # P Beginner walkthrough
-   ARCHITECTURE-DECISION-ANALYSIS.md         # Technical decisions
-   pre-installation-readiness-report.md      # P System assessment
-   DOCKER-ANALYSIS.md                        # Docker vs bare-metal
-   SESSION-2025-11-17-SUMMARY.md             # This session summary
+├── INSTALLATION-GUIDE-BEGINNERS.md           # ⭐ Beginner walkthrough
+├── ARCHITECTURE-DECISION-ANALYSIS.md         # Technical decisions
+├── pre-installation-readiness-report.md      # ⭐ System assessment
+└── SESSION-2025-11-17-SUMMARY.md             # This session summary
 ```
 
 ### Constitutional Documentation
 ```
-AGENTS.md                                     # P Single source of truth
-CLAUDE.md � AGENTS.md                         # Symlink for Claude Code
-GEMINI.md � AGENTS.md                         # Symlink for Gemini CLI
+AGENTS.md                                     # ⭐ Single source of truth
+CLAUDE.md → AGENTS.md                         # Symlink for Claude Code
+GEMINI.md → AGENTS.md                         # Symlink for Gemini CLI
 ```
 
 ### Agent System
 ```
 .claude/agents/
-   README.md                                 # P Agent system overview
-   COMPLETE-AGENT-SYSTEM-REPORT.md           # Full implementation report
-   [13 individual agent files]               # Specialized agent instructions
+├── README.md                                 # ⭐ Agent system overview
+├── COMPLETE-AGENT-SYSTEM-REPORT.md           # Full implementation report
+└── [13 individual agent files]               # Specialized agent instructions
 ```
 
 ---
 
-## <� Success Metrics
+## 🎯 Success Metrics
 
 ### Performance Targets (After Optimization)
 - [ ] Boot time < 25 seconds (target: 22s)
@@ -532,14 +515,14 @@ GEMINI.md � AGENTS.md                         # Symlink for Gemini CLI
 
 ---
 
-## � Legal & Compliance
+## ⚖️ Legal & Compliance
 
 **IMPORTANT**: This project requires proper licensing and authorization:
 
 ### Windows 11 Licensing (MANDATORY)
--  **REQUIRED**: Windows 11 Pro **Retail** license (~$199 USD)
-- L **PROHIBITED**: OEM licenses (non-transferable to VMs)
-- L **PROHIBITED**: Volume licensing without authorization
+- ✅ **REQUIRED**: Windows 11 Pro **Retail** license (~$199 USD)
+- ❌ **PROHIBITED**: OEM licenses (non-transferable to VMs)
+- ❌ **PROHIBITED**: Volume licensing without authorization
 
 ### Microsoft 365 Licensing
 - VM counts toward 5-device activation limit
@@ -564,7 +547,7 @@ GEMINI.md � AGENTS.md                         # Symlink for Gemini CLI
 
 ---
 
-## <� Getting Help
+## 🆘 Getting Help
 
 ### Documentation
 - **Comprehensive Guide**: `docs-repo/INSTALLATION-GUIDE-BEGINNERS.md`
@@ -574,17 +557,17 @@ GEMINI.md � AGENTS.md                         # Symlink for Gemini CLI
 
 ### Agent System
 Use natural language to invoke specialized agents:
-- "Check my system status" � project-health-auditor
-- "Create a VM" � vm-operations-specialist
-- "Optimize performance" � performance-optimization-specialist
-- "Audit security" � security-hardening-specialist
+- "Check my system status" → project-health-auditor
+- "Create a VM" → vm-operations-specialist
+- "Optimize performance" → performance-optimization-specialist
+- "Audit security" → security-hardening-specialist
 
 ### GitHub Issues
-(Will be available after repository creation)
+Report issues at: https://github.com/kairin/win-qemu/issues
 
 ---
 
-## < Context7 Verified Best Practices
+## 🔬 Context7 Verified Best Practices
 
 All technical decisions in this project are validated against **latest authoritative sources** (2024-2025):
 
@@ -597,20 +580,20 @@ All technical decisions in this project are validated against **latest authorita
 - **VirtIO Driver Performance Tuning** (Linux Foundation, 2024)
 
 ### Key Findings
-1. **Docker for QEMU/KVM**: L Not recommended by any official source
-2. **Bare-metal KVM**:  Universal industry standard (AWS, Azure, GCP)
-3. **Hyper-V Enlightenments**:  Critical for Windows performance (14 features)
-4. **virtio-fs vs Samba**:  virtio-fs 3-5x faster for local files
-5. **Q35 vs i440fx**:  Q35 required for modern Windows (PCIe support)
-6. **TPM 2.0**:  Mandatory for Windows 11 (swtpm emulation)
+1. **Docker for QEMU/KVM**: ❌ Not recommended by any official source
+2. **Bare-metal KVM**: ✅ Universal industry standard (AWS, Azure, GCP)
+3. **Hyper-V Enlightenments**: ✅ Critical for Windows performance (14 features)
+4. **virtio-fs vs Samba**: ✅ virtio-fs 3-5x faster for local files
+5. **Q35 vs i440fx**: ✅ Q35 required for modern Windows (PCIe support)
+6. **TPM 2.0**: ✅ Mandatory for Windows 11 (swtpm emulation)
 
 ---
 
-## =� Version Information
+## 📌 Version Information
 
 **Version**: 1.0.0 (Infrastructure Complete)
 **Last Updated**: 2025-11-17
-**Repository**: https://github.com/[username]/win-qemu (to be created)
+**Repository**: https://github.com/kairin/win-qemu
 
 **Change Log**:
 - 2025-11-17: Initial project setup
@@ -624,10 +607,10 @@ All technical decisions in this project are validated against **latest authorita
 
 ---
 
-## =� License
+## 📄 License
 
 MIT License - See LICENSE file for details
 
 ---
 
-**=� Ready to begin? Start with Step 1 in the "Quick Start: When You Get Home" section above!**
+**🏁 Ready to begin? Start with Step 1 in the "Quick Start: When You Get Home" section above!**
