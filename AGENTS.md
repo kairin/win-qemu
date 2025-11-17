@@ -330,10 +330,15 @@ git push origin main
 
 ## 🏗️ System Architecture
 
-### Directory Structure (RECOMMENDED)
+### Directory Structure (MANDATORY)
+
+**File Organization Principle**: Keep root folder clean - ALL repository-wide documentation MUST go in `docs-repo/`
 
 ```
 win-qemu/
+├── docs-repo/                    # Repository-wide documentation (MANDATORY location)
+│   ├── AGENT-IMPLEMENTATION-PLAN.md  # Agent system implementation tracking
+│   └── ...                       # All future repo documentation goes here
 ├── outlook-linux-guide/          # Implementation documentation (10 files)
 │   ├── 00-README.md              # Main guide index
 │   ├── 05-qemu-kvm-reference-architecture.md  # ⭐ Primary setup guide
@@ -1005,6 +1010,12 @@ virt-install --name win11-outlook --ram 8192 --vcpus 4 \
   - Replaced verbose implementation phases with concise summary + references
   - Maintained all essential information with links to detailed guides
   - Compliance status: 🟠 ORANGE ZONE (89.4% of 40 KB limit, 4.3 KB buffer)
+- 2025-11-17: File organization requirement added
+  - Established `docs-repo/` as MANDATORY location for repository-wide documentation
+  - Updated Directory Structure section (RECOMMENDED → MANDATORY)
+  - Moved AGENT-IMPLEMENTATION-PLAN.md to docs-repo/
+  - File size impact: +377 bytes (36.97 KB → 37.34 KB)
+  - Compliance status: 🟠 ORANGE ZONE (93.4% of 40 KB limit, 2.66 KB buffer)
 
 **Related Files**:
 - `CLAUDE.md` → Symlink to this file (Claude Code integration)
