@@ -92,7 +92,7 @@
        Change to your desired host path
 
     2. Attach to VM:
-       virsh attach-device <vm-name> /path/to/virtio-fs-share.xml --config
+       virsh attach-device <vm-name> /path/to/virtio-fs-share.xml (use config flag)
 
     3. Or manually insert into VM XML:
        virsh edit <vm-name>

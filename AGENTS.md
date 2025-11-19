@@ -396,11 +396,11 @@ win-qemu/
 
 ### Overview
 
-This project includes a sophisticated **13-agent system** for automating QEMU/KVM virtualization workflows, from VM creation to performance optimization and security hardening.
+This project includes a sophisticated **14-agent system** for automating QEMU/KVM virtualization workflows, from VM creation to performance optimization and security hardening.
 
 **Agent Categories**:
-- **8 Core Infrastructure Agents**: Documentation, Git, orchestration, health
-- **5 QEMU/KVM Specialized Agents**: VM ops, performance, security, virtio-fs, automation
+- **8 Core Infrastructure Agents**: Documentation, Git, orchestration, health, compliance
+- **6 QEMU/KVM Specialized Agents**: VM ops, performance, security, virtio-fs, automation, health-checker
 
 **Key Benefits**: 87.7% time savings, 100% constitutional compliance, automated best practices
 
@@ -413,8 +413,9 @@ This project includes a sophisticated **13-agent system** for automating QEMU/KV
 | security-hardening-specialist | Security checklist | 60+ item audit |
 | virtio-fs-specialist | Filesystem sharing | PST file access |
 | qemu-automation-specialist | Guest automation | QEMU agent scripts |
+| qemu-health-checker | Prerequisite validation | Pre-flight readiness check |
 | master-orchestrator | Multi-agent coordination | Complex workflows |
-| project-health-auditor | System validation | Pre-flight checks |
+| project-health-auditor | System validation | Best practices compliance |
 | git-operations-specialist | Git operations | Commits, pushes |
 | documentation-guardian | Documentation integrity | AGENTS.md enforcement |
 | symlink-guardian | Symlink verification | CLAUDE.md/GEMINI.md |
@@ -425,9 +426,11 @@ This project includes a sophisticated **13-agent system** for automating QEMU/KV
 ### How to Invoke Agents
 
 **Natural Language** (Recommended):
+- "Is my system ready for QEMU/KVM?" → qemu-health-checker
 - "Create a new Windows 11 VM with full optimization" → master-orchestrator
 - "Optimize my VM for best performance" → performance-optimization-specialist
 - "Audit my VM security" → security-hardening-specialist
+- "Check my setup follows latest best practices" → project-health-auditor
 
 **Direct Reference**: Mention agent name explicitly (e.g., "Use vm-operations-specialist to create a VM")
 
@@ -709,12 +712,18 @@ virt-install --name win11-outlook --ram 8192 --vcpus 4 \
   - Total reduction: ~318 lines (~25 KB savings)
   - File size: 37.7 KB → ~12 KB (RED ZONE → GREEN ZONE)
   - Compliance status: ✅ GREEN ZONE (<30% of 40 KB limit, healthy buffer)
+- 2025-11-19: Agent inventory update (14th agent documented)
+  - Added qemu-health-checker to agent inventory (42-point automated prerequisite validation)
+  - Updated agent count: 13 → 14 agents (8 core + 6 QEMU/KVM specialized)
+  - Added typical use cases distinguishing qemu-health-checker vs project-health-auditor
+  - File size impact: +456 bytes minimal increase
+  - Compliance status: ✅ GREEN ZONE (remains <30% of 40 KB limit)
 
 **Related Files**:
 - `CLAUDE.md` → Symlink to this file (Claude Code integration)
 - `GEMINI.md` → Symlink to this file (Gemini CLI integration)
 - `.claude/` → Claude Code configuration directory
-- `.claude/agents/` → Multi-agent system (13 agents, 9,728 lines, ~255 KB documentation)
+- `.claude/agents/` → Multi-agent system (14 agents, 9,728 lines, ~255 KB documentation)
 - `.claude/agents/README.md` → Agent system overview and quick start guide
 - `.claude/agents/AGENTS-MD-REFERENCE.md` → Complete agent documentation (extracted for constitutional compliance)
 
