@@ -334,7 +334,7 @@
       Download from: https://www.microsoft.com/software-download/windows11
 
       IMPORTANT: Remove this device after Windows installation completes
-      Command: virsh detach-disk VM_NAME hdb --config
+      Command: virsh detach-disk VM_NAME hdb (use config flag)
     -->
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>
@@ -473,7 +473,7 @@
       - Requires VirtIO balloon driver (balloon.sys) in Windows
 
       Statistics: 10-second interval memory usage reporting
-      - View stats: virsh domstats VM_NAME --balloon
+      - View stats: virsh domstats VM_NAME (use balloon flag)
     -->
     <memballoon model='virtio'>
       <stats period='10'/>
@@ -622,10 +622,11 @@
          <driver type='virtiofs'/>
          <source dir='USER_HOME/outlook-data'/>
          <target dir='outlook-share'/>
-         <readonly/>  <!-- CRITICAL: Ransomware protection -->
+         <readonly/>  (CRITICAL: Ransomware protection)
          <address type='pci' domain='0x0000' bus='0x07' slot='0x00' function='0x0'/>
        </filesystem>
-
+      -->
+      <!--
        Requires: WinFsp installed in Windows guest
 
     2. PCI Device Passthrough (GPU, USB controller)
@@ -643,8 +644,8 @@
 
        <hostdev mode='subsystem' type='usb' managed='yes'>
          <source>
-           <vendor id='0x046d'/>  <!-- Logitech vendor ID -->
-           <product id='0xc077'/> <!-- M-U0007 mouse -->
+           <vendor id='0x046d'/>  (Logitech vendor ID)
+           <product id='0xc077'/> (M-U0007 mouse)
          </source>
        </hostdev>
   -->
