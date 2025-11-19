@@ -1,0 +1,261 @@
+<!--
+  VirtIO-FS Filesystem Sharing Configuration Template
+  ===================================================
+
+  PURPOSE:
+    This configuration enables high-performance filesystem sharing between
+    Ubuntu host and Windows 11 guest using virtio-fs technology. It provides
+    direct .pst file access for Microsoft 365 Outlook while maintaining security
+    through READ-ONLY mode enforcement.
+
+  CRITICAL SECURITY FEATURE: READ-ONLY MODE
+  =========================================
+    The <readonly/> tag is MANDATORY and NON-NEGOTIABLE. It prevents guest malware
+    (including ransomware) from encrypting or modifying host files. Without this
+    tag, a compromised Windows guest could encrypt your .pst files on the host.
+
+    SECURITY IMPACT:
+      - Read-Only Mode:  Guest malware CANNOT encrypt host files ✓
+      - Read-Write Mode: Guest malware CAN encrypt host files ✗ (HIGH RISK)
+
+    ONLY remove <readonly/> tag if:
+      1. You need to CREATE new .pst files from Outlook (rare use case)
+      2. You have LUKS encryption on host partition
+      3. You have real-time antivirus in guest
+      4. You maintain regular backups of shared directory
+      5. You acknowledge and accept the ransomware risk
+
+  CONFIGURATION DETAILS:
+  =====================
+    - Type: mount (virtio-fs uses host filesystem as source)
+    - Access Mode: passthrough (best performance, direct file access)
+    - Driver: virtiofs with 1024 queue size (balanced performance)
+    - Source: /home/user/outlook-data (host directory - CUSTOMIZE THIS)
+    - Target: outlook-share (mount tag - visible to Windows guest)
+    - Cache: auto (automatic caching for performance)
+
+  PERFORMANCE TUNING:
+  ==================
+    Queue Size Options:
+      - 1024: Default, sufficient for most workloads (<1GB .pst files)
+      - 2048: High performance (1GB-2GB .pst files, heavy search operations)
+      - 4096: Maximum performance (>2GB .pst files, multiple concurrent users)
+
+    Cache Mode Options (modify <driver> tag):
+      - auto: Automatic caching (RECOMMENDED - balanced security/performance)
+      - always: Maximum caching (best performance, less safe during crashes)
+      - none: No caching (lowest performance, safest)
+
+  WINDOWS GUEST SETUP REQUIREMENTS:
+  =================================
+    1. Install WinFsp (Windows userspace filesystem driver)
+       Download: https://github.com/winfsp/winfsp/releases
+       Version: 2.0.23075 or later (as of Jan 2025)
+
+    2. Install VirtIO-FS Service (from virtio-win ISO)
+       Location: D:\guest-agent\virtiofs-*.exe
+
+    3. Mount as Z: drive (PowerShell as Administrator):
+       net use Z: \\svc\outlook-share
+
+    4. Verify read-only mode:
+       - Try creating a file on Z: drive
+       - Should fail with "Access Denied" error ✓
+
+  TROUBLESHOOTING:
+  ================
+    Issue 1: Z: drive not appearing in Windows
+      - Cause: WinFsp not installed or VirtIO-FS service not running
+      - Solution: Install WinFsp, reboot Windows, check services.msc
+
+    Issue 2: "Access Denied" when reading files
+      - Cause: Incorrect host directory permissions
+      - Solution: chmod 755 /home/user/outlook-data
+                  chown user:user /home/user/outlook-data
+
+    Issue 3: Slow performance (>5 seconds to open .pst)
+      - Cause: Low queue size or missing Hyper-V enlightenments
+      - Solution: Increase queue to 2048 or 4096
+                  Enable Hyper-V enlightenments in VM XML
+
+    Issue 4: Write operations succeed (SECURITY RISK!)
+      - Cause: Missing <readonly/> tag
+      - Solution: SHUTDOWN VM IMMEDIATELY
+                  Add <readonly/> tag to this configuration
+                  virsh define updated XML
+                  Restart VM and re-verify
+
+  USAGE INSTRUCTIONS:
+  ===================
+    1. Customize source directory path (line 89):
+       <source dir='/home/user/outlook-data'/>
+       Change to your desired host path
+
+    2. Attach to VM:
+       virsh attach-device <vm-name> /path/to/virtio-fs-share.xml --config
+
+    3. Or manually insert into VM XML:
+       virsh edit <vm-name>
+       Copy the <filesystem> block below into <devices> section
+
+    4. Restart VM for changes to take effect:
+       virsh shutdown <vm-name>
+       virsh start <vm-name>
+
+  PERFORMANCE EXPECTATIONS (Fully Optimized):
+  ===========================================
+    - .pst file open (1GB): <2 seconds (vs 8s unoptimized)
+    - Search operation: <1 second (vs 5s unoptimized)
+    - Folder navigation: Instant (<100ms)
+    - Overall: 10x faster than Samba/CIFS
+
+  SECURITY CHECKLIST:
+  ===================
+    Before deploying to production, verify:
+    [ ] <readonly/> tag is present (line 102)
+    [ ] Source directory has proper permissions (chmod 755)
+    [ ] Source directory is owned by your user
+    [ ] LUKS encryption enabled on host partition (RECOMMENDED)
+    [ ] Regular backups of .pst files configured
+    [ ] Windows Defender active in guest
+    [ ] BitLocker enabled in guest (if handling sensitive data)
+
+  REFERENCES:
+  ===========
+    - Implementation Guide: outlook-linux-guide/06-seamless-bridge-integration.md
+    - Security Analysis: research/06-security-hardening-analysis.md
+    - Troubleshooting: research/07-troubleshooting-failure-modes.md
+    - WinFsp Project: https://github.com/winfsp/winfsp
+
+  VERSION: 1.0.0 (January 2025)
+  MAINTAINER: win-qemu agent ecosystem
+  LICENSE: See project LICENSE file
+-->
+
+<filesystem type='mount' accessmode='passthrough'>
+  <!-- VirtIO-FS Driver Configuration
+       - type: virtiofs (modern shared filesystem driver)
+       - queue: 1024 (default), 2048 (high perf), 4096 (maximum)
+       - Increase queue size for larger .pst files or heavy workloads
+  -->
+  <driver type='virtiofs' queue='1024'/>
+
+  <!-- Source Directory (HOST SIDE)
+       - CUSTOMIZE THIS PATH to your actual shared directory
+       - Must exist before starting VM
+       - Recommended: /home/user/outlook-data (for .pst files)
+       - Permissions: 755 (rwxr-xr-x) for security
+       - Ownership: Your user account + libvirt-qemu group
+
+       IMPORTANT: This directory will be accessible from Windows guest
+                  Store ONLY files you want to share with the VM
+  -->
+  <source dir='/home/user/outlook-data'/>
+
+  <!-- Target Mount Tag (GUEST SIDE)
+       - This is the mount tag visible to Windows guest
+       - Used by WinFsp to mount as Z: drive
+       - Mount command in Windows: net use Z: \\svc\outlook-share
+
+       DO NOT CHANGE unless you update Windows mount configuration
+  -->
+  <target dir='outlook-share'/>
+
+  <!-- CRITICAL SECURITY FEATURE: READ-ONLY MODE
+       ==========================================
+       This tag prevents the Windows guest from writing to host files.
+
+       RANSOMWARE PROTECTION:
+         If Windows is infected with ransomware, the malware CANNOT:
+         - Encrypt .pst files on the host
+         - Delete files in the shared directory
+         - Modify existing files
+
+       REMOVE THIS TAG ONLY IF:
+         1. You need to create NEW .pst files from Outlook (uncommon)
+         2. You understand and accept the security risks
+         3. You have implemented additional protections:
+            - LUKS encryption on host partition
+            - Real-time antivirus in Windows guest
+            - Regular encrypted backups of shared directory
+            - Network firewall restricting guest internet access
+
+       TO ENABLE READ-WRITE MODE (HIGH RISK):
+         1. Comment out or remove the line below
+         2. virsh define the updated XML
+         3. Restart VM
+         4. Verify you can create files on Z: drive
+         5. IMMEDIATELY implement additional security measures
+
+       WARNING: Read-write mode significantly increases attack surface.
+                Guest malware can permanently destroy host data.
+  -->
+  <readonly/>
+
+  <!-- PCI Address Assignment (OPTIONAL)
+       - Uncomment if you need specific PCI slot assignment
+       - Useful for consistent device ordering across reboots
+       - Replace 0x0X with actual slot number (e.g., 0x09, 0x0a)
+
+       To find available slots:
+         virsh dumpxml <vm-name> | grep "slot=" | sort
+  -->
+  <!--
+  <address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>
+  -->
+</filesystem>
+
+<!-- ALTERNATIVE CONFIGURATION: READ-WRITE MODE (HIGH RISK)
+     =========================================================
+     USE WITH EXTREME CAUTION - ONLY FOR TESTING OR WITH PROPER SAFEGUARDS
+
+     To enable read-write mode:
+       1. Comment out or remove <readonly/> tag (line 102)
+       2. Implement MANDATORY security controls:
+          - LUKS encryption: sudo cryptsetup luksFormat /dev/sdX
+          - Host firewall: sudo ufw enable && sudo ufw default deny outgoing
+          - Guest antivirus: Windows Defender real-time protection
+          - Backups: Daily encrypted snapshots of /home/user/outlook-data
+       3. Test disaster recovery procedures
+       4. Document risk acceptance in security policy
+
+<filesystem type='mount' accessmode='passthrough'>
+  <driver type='virtiofs' queue='1024'/>
+  <source dir='/home/user/outlook-data'/>
+  <target dir='outlook-share'/>
+  <!- NO <readonly/> TAG = WRITE ACCESS ENABLED ->
+  <!- SECURITY RISK: Guest malware can encrypt host files ->
+</filesystem>
+-->
+
+<!-- ALTERNATIVE CONFIGURATION: HIGH PERFORMANCE (Large .pst Files)
+     ==============================================================
+     For .pst files >2GB or heavy concurrent workloads
+
+<filesystem type='mount' accessmode='passthrough'>
+  <driver type='virtiofs' queue='4096'/>
+  <source dir='/home/user/outlook-data'/>
+  <target dir='outlook-share'/>
+  <readonly/>
+  <!- Increased queue size for maximum throughput ->
+  <!- Recommended when: ->
+  <!-   - .pst files >2GB ->
+  <!-   - Multiple users accessing shared directory ->
+  <!-   - Heavy search operations (>100 searches/minute) ->
+</filesystem>
+-->
+
+<!-- ALTERNATIVE CONFIGURATION: Maximum Security (No Cache)
+     ======================================================
+     For environments requiring highest security (regulated industries)
+
+<filesystem type='mount' accessmode='passthrough'>
+  <driver type='virtiofs' queue='1024' cache='none'/>
+  <source dir='/home/user/outlook-data'/>
+  <target dir='outlook-share'/>
+  <readonly/>
+  <!- cache='none' disables all caching ->
+  <!- Trade-off: Lower performance but safer during crashes ->
+  <!- Use when: HIPAA, SOX, FINRA compliance required ->
+</filesystem>
+-->

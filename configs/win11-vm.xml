@@ -1,0 +1,719 @@
+<!--
+  Windows 11 QEMU/KVM Virtual Machine Configuration Template
+
+  This XML template provides a production-ready configuration for running
+  Windows 11 with near-native performance (85-95%) using QEMU/KVM.
+
+  KEY FEATURES:
+  - Q35 Chipset: Modern PCI-Express support (required for Windows 11)
+  - UEFI/OVMF Firmware: Required for Secure Boot and TPM 2.0
+  - TPM 2.0 Emulation: Windows 11 installation requirement
+  - 14 Hyper-V Enlightenments: Critical for optimal performance
+  - VirtIO Drivers: All devices use VirtIO for maximum performance
+  - host-passthrough CPU: Exposes host CPU features to guest
+
+  PLACEHOLDERS TO REPLACE:
+  - VM_NAME: Virtual machine name (e.g., win11-outlook)
+  - RAM_MB: RAM allocation in MB (e.g., 8192 for 8GB)
+  - VCPU_COUNT: Number of virtual CPUs (e.g., 4)
+  - DISK_SIZE_GB: Disk size in GB (e.g., 100)
+  - USER_HOME: User's home directory path
+
+  USAGE:
+  1. Copy this template: cp configs/win11-vm.xml /tmp/my-vm.xml
+  2. Replace placeholders with actual values
+  3. Define VM: virsh define /tmp/my-vm.xml
+  4. Start VM: virsh start VM_NAME
+
+  PERFORMANCE NOTES:
+  - With all optimizations: 85-95% of native Windows performance
+  - Without Hyper-V enlightenments: Only 50-60% (unusable)
+  - VirtIO drivers are MANDATORY (never use IDE/SATA/e1000)
+
+  SECURITY NOTES:
+  - Secure Boot is enabled (Windows 11 requirement)
+  - TPM 2.0 provides hardware-backed encryption
+  - Use virtio-fs in read-only mode for shared folders (ransomware protection)
+
+  Last Updated: 2025-01-19
+  Compatible with: QEMU 8.0+, libvirt 9.0+, Ubuntu 25.10
+-->
+
+<domain type='kvm'>
+  <!--
+    VM Name and Metadata
+    Replace VM_NAME with your desired VM name (e.g., win11-outlook)
+  -->
+  <name>VM_NAME</name>
+  <uuid>GENERATE_UUID</uuid>
+  <metadata>
+    <libosinfo:libosinfo xmlns:libosinfo="http://libosinfo.org/xmlns/libvirt/domain/1.0">
+      <libosinfo:os id="http://microsoft.com/win/11"/>
+    </libosinfo:libosinfo>
+  </metadata>
+
+  <!--
+    Memory Configuration
+    Replace RAM_MB with desired RAM in MB (minimum 4096, recommended 8192+)
+
+    Memory Backing Features:
+    - hugepages: Use 2MB huge pages for better performance (optional, requires host setup)
+    - locked: Prevent swapping VM memory to disk (improves performance)
+    - nosharepages: Disable KSM for this VM (security consideration)
+
+    To enable huge pages on host:
+    echo 4096 | sudo tee /proc/sys/vm/nr_hugepages
+  -->
+  <memory unit='MiB'>RAM_MB</memory>
+  <currentMemory unit='MiB'>RAM_MB</currentMemory>
+
+  <!--
+    Optional: Enable huge pages for better memory performance
+    Uncomment the following block after configuring huge pages on host
+  -->
+  <!--
+  <memoryBacking>
+    <hugepages/>
+    <locked/>
+    <nosharepages/>
+  </memoryBacking>
+  -->
+
+  <!--
+    CPU Configuration
+    Replace VCPU_COUNT with number of vCPUs (recommended: 4-8)
+
+    CPU Mode: host-passthrough
+    - Exposes ALL host CPU features to guest (best performance)
+    - Required for Windows 11 CPU generation check
+    - Satisfies TPM 2.0 requirements
+
+    CPU Topology:
+    - sockets: Number of CPU sockets (usually 1)
+    - dies: Dies per socket (usually 1)
+    - cores: Cores per die (adjust based on VCPU_COUNT)
+    - threads: Threads per core (1 for no hyperthreading, 2 for SMT)
+
+    Optional: CPU Pinning (uncomment for dedicated cores)
+    Improves performance by reducing CPU scheduling overhead
+  -->
+  <vcpu placement='static'>VCPU_COUNT</vcpu>
+
+  <!--
+  <cputune>
+    <vcpupin vcpu='0' cpuset='0'/>
+    <vcpupin vcpu='1' cpuset='1'/>
+    <vcpupin vcpu='2' cpuset='2'/>
+    <vcpupin vcpu='3' cpuset='3'/>
+    <emulatorpin cpuset='4-5'/>
+  </cputune>
+  -->
+
+  <cpu mode='host-passthrough' check='none' migratable='off'>
+    <topology sockets='1' dies='1' cores='VCPU_COUNT' threads='1'/>
+    <!--
+      CPU Cache Passthrough (optional, improves performance)
+      Exposes host CPU cache topology to guest
+    -->
+    <cache mode='passthrough'/>
+
+    <!--
+      CPU Features (optional overrides)
+      Uncomment to manually enable/disable specific CPU features
+    -->
+    <!--
+    <feature policy='require' name='vmx'/>
+    <feature policy='require' name='pdpe1gb'/>
+    <feature policy='require' name='invtsc'/>
+    -->
+  </cpu>
+
+  <!--
+    Operating System and Firmware Configuration
+
+    OS Type: hvm (Hardware Virtual Machine)
+    Machine: Q35 chipset (modern PCI-Express, required for Windows 11)
+    Firmware: UEFI with Secure Boot (required for Windows 11)
+
+    OVMF Paths (Ubuntu 25.10 default locations):
+    - CODE: /usr/share/OVMF/OVMF_CODE_4M.ms.fd (Secure Boot enabled)
+    - VARS: /var/lib/libvirt/qemu/nvram/VM_NAME_VARS.fd (per-VM NVRAM)
+
+    Boot Order:
+    1. CDROM (for Windows installation)
+    2. HD (for normal boot after installation)
+
+    Note: Remove CDROM devices after Windows installation completes
+  -->
+  <os firmware='efi'>
+    <type arch='x86_64' machine='pc-q35-8.0'>hvm</type>
+    <firmware>
+      <feature enabled='yes' name='enrolled-keys'/>
+      <feature enabled='yes' name='secure-boot'/>
+    </firmware>
+    <loader readonly='yes' secure='yes' type='pflash'>/usr/share/OVMF/OVMF_CODE_4M.ms.fd</loader>
+    <nvram template='/usr/share/OVMF/OVMF_VARS_4M.ms.fd'>/var/lib/libvirt/qemu/nvram/VM_NAME_VARS.fd</nvram>
+    <boot dev='cdrom'/>
+    <boot dev='hd'/>
+    <bootmenu enable='yes' timeout='3000'/>
+  </os>
+
+  <!--
+    Features Configuration
+
+    CRITICAL: 14 Hyper-V Enlightenments (MANDATORY for 85-95% performance)
+
+    Without these enlightenments, Windows performance is only 50-60% of native.
+    Each enlightenment optimizes specific Windows subsystems:
+
+    1. relaxed: Relaxed timing (reduces CPU exits for timer operations)
+    2. vapic: Virtual APIC (accelerates interrupt handling)
+    3. spinlocks: Spinlock optimization (reduces lock contention overhead)
+    4. vpindex: Virtual processor index (improves multi-vCPU scheduling)
+    5. runtime: Hypervisor runtime detection (enables Windows optimizations)
+    6. synic: Synthetic interrupt controller (faster interrupt delivery)
+    7. stimer: Synthetic timers (high-precision timers with direct injection)
+    8. reset: Hypervisor reset (improves reboot reliability)
+    9. vendor_id: Custom vendor ID (anti-detection, game compatibility)
+    10. frequencies: TSC/APIC frequency reporting (accurate timekeeping)
+    11. reenlightenment: Migration notification (live migration support)
+    12. tlbflush: Efficient TLB flushing (reduces memory operation overhead)
+    13. ipi: Inter-processor interrupts (faster multi-core communication)
+    14. evmcs: Enlightened VMCS (nested virtualization acceleration)
+
+    Additional Features:
+    - ACPI: Power management (shutdown, reboot, suspend)
+    - APIC: Advanced Programmable Interrupt Controller
+    - PAE: Physical Address Extension (>4GB RAM support)
+    - vmport: VMware compatibility (optional, disable for pure KVM)
+  -->
+  <features>
+    <acpi/>
+    <apic/>
+    <pae/>
+
+    <!-- Hyper-V Enlightenments (The "Secret Sauce") -->
+    <hyperv mode='custom'>
+      <relaxed state='on'/>
+      <vapic state='on'/>
+      <spinlocks state='on' retries='8191'/>
+      <vpindex state='on'/>
+      <runtime state='on'/>
+      <synic state='on'/>
+      <stimer state='on'>
+        <direct state='on'/>
+      </stimer>
+      <reset state='on'/>
+      <vendor_id state='on' value='1234567890ab'/>
+      <frequencies state='on'/>
+      <reenlightenment state='on'/>
+      <tlbflush state='on'/>
+      <ipi state='on'/>
+      <evmcs state='on'/>
+    </hyperv>
+
+    <!--
+      VMware Compatibility Layer (optional)
+      Disable if using pure KVM (recommended for best performance)
+    -->
+    <vmport state='off'/>
+
+    <!--
+      SMM (System Management Mode)
+      Required for Secure Boot with OVMF
+    -->
+    <smm state='on'/>
+  </features>
+
+  <!--
+    Clock and Timer Configuration
+
+    Windows requires accurate timekeeping for stability and performance.
+
+    Clock offset='localtime': Guest clock uses local time (recommended for Windows)
+
+    Timers:
+    - rtc: Real-time clock (tickpolicy='catchup' handles clock drift)
+    - pit: Programmable interval timer (tickpolicy='delay' for accuracy)
+    - hpet: High Precision Event Timer (optional, some games require it)
+    - hypervclock: Hyper-V reference TSC (CRITICAL for Windows performance)
+
+    Hypervclock provides:
+    - Stable, monotonic time source
+    - Immune to CPU frequency scaling
+    - Essential for accurate timekeeping in virtualized environment
+  -->
+  <clock offset='localtime'>
+    <timer name='rtc' tickpolicy='catchup'/>
+    <timer name='pit' tickpolicy='delay'/>
+    <timer name='hpet' present='no'/>
+    <timer name='hypervclock' present='yes'/>
+  </clock>
+
+  <!--
+    Power Management
+    - suspend-to-mem: Allow S3 sleep (optional)
+    - suspend-to-disk: Allow hibernation (optional)
+  -->
+  <pm>
+    <suspend-to-mem enabled='yes'/>
+    <suspend-to-disk enabled='no'/>
+  </pm>
+
+  <!--
+    Device Configuration
+
+    All devices use VirtIO drivers for maximum performance:
+    - VirtIO drivers are paravirtualized (hypervisor-aware)
+    - 3-10x faster than emulated hardware (IDE, SATA, e1000)
+    - Essential for achieving 85-95% native performance
+
+    VirtIO Driver Installation:
+    1. During Windows installation: Load viostor driver to detect disk
+    2. After installation: Install all remaining drivers from virtio-win ISO
+  -->
+  <devices>
+    <!--
+      Emulator Path
+      QEMU system emulator for x86_64 architecture
+    -->
+    <emulator>/usr/bin/qemu-system-x86_64</emulator>
+
+    <!--
+      Virtual Disk Configuration
+
+      Type: qcow2 (QEMU Copy-On-Write v2)
+      - Supports snapshots, compression, encryption
+      - Thin provisioning (only uses space as needed)
+      - Better performance than raw for most workloads
+
+      Bus: virtio (SCSI)
+      - 10-30x faster than IDE/SATA
+      - Supports TRIM/discard for SSD optimization
+      - Requires VirtIO storage driver (viostor) during Windows install
+
+      Cache: writeback (best performance)
+      - Writes cached in host, flushed asynchronously
+      - Use 'none' or 'writethrough' for data integrity critical apps
+
+      IO Mode: threads (best compatibility)
+      - Use 'native' for raw files on host SSD
+
+      Discard: unmap (enables TRIM support)
+      - Reclaims unused space from guest to host
+      - Essential for SSD longevity
+
+      Path: /var/lib/libvirt/images/VM_NAME.qcow2
+    -->
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' cache='writeback' io='threads' discard='unmap'/>
+      <source file='/var/lib/libvirt/images/VM_NAME.qcow2'/>
+      <target dev='sda' bus='scsi'/>
+      <address type='drive' controller='0' bus='0' target='0' unit='0'/>
+    </disk>
+
+    <!--
+      VirtIO SCSI Controller
+      Required for virtio-scsi disk bus
+
+      Model: virtio-scsi
+      - Supports multiple disks (up to 256 devices)
+      - Better performance than virtio-blk for multiple disks
+      - Supports SCSI commands (TRIM, UNMAP)
+    -->
+    <controller type='scsi' index='0' model='virtio-scsi'>
+      <driver queues='VCPU_COUNT'/>
+      <address type='pci' domain='0x0000' bus='0x03' slot='0x00' function='0x0'/>
+    </controller>
+
+    <!--
+      CDROM 1: Windows 11 Installation ISO
+
+      Path: USER_HOME/win-qemu/source-iso/Win11.iso
+
+      Download from: https://www.microsoft.com/software-download/windows11
+
+      IMPORTANT: Remove this device after Windows installation completes
+      Command: virsh detach-disk VM_NAME hdb --config
+    -->
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source file='USER_HOME/win-qemu/source-iso/Win11.iso'/>
+      <target dev='hdb' bus='sata'/>
+      <readonly/>
+      <address type='drive' controller='0' bus='0' target='0' unit='1'/>
+    </disk>
+
+    <!--
+      CDROM 2: VirtIO Drivers ISO
+
+      Path: USER_HOME/win-qemu/source-iso/virtio-win.iso
+
+      Download from: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/
+
+      Required for:
+      1. Windows installation (load viostor driver to detect disk)
+      2. Post-installation (install all VirtIO drivers for network, graphics, etc.)
+
+      Keep attached after installation for driver updates
+    -->
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source file='USER_HOME/win-qemu/source-iso/virtio-win.iso'/>
+      <target dev='hdc' bus='sata'/>
+      <readonly/>
+      <address type='drive' controller='0' bus='0' target='0' unit='2'/>
+    </disk>
+
+    <!--
+      SATA Controller
+      Required for CDROM devices (Windows installer compatibility)
+    -->
+    <controller type='sata' index='0'>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x1f' function='0x2'/>
+    </controller>
+
+    <!--
+      Network Interface
+
+      Type: NAT (network='default')
+      - Simplest configuration, no host network changes needed
+      - VM gets IP from libvirt DHCP (usually 192.168.122.x)
+      - Outbound internet access enabled
+      - Inbound connections blocked (secure by default)
+
+      Model: virtio-net
+      - 3-5x faster than e1000/rtl8139
+      - Requires VirtIO network driver (NetKVM) in Windows
+      - Supports offloading (TSO, GSO, checksum)
+
+      Alternative: Bridged network (for RemoteApp/seamless integration)
+      <interface type='bridge'>
+        <source bridge='br0'/>
+        <model type='virtio'/>
+      </interface>
+    -->
+    <interface type='network'>
+      <source network='default'/>
+      <model type='virtio'/>
+      <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0'/>
+    </interface>
+
+    <!--
+      Graphics Configuration
+
+      Type: VNC (Virtual Network Computing)
+      - Remote desktop protocol for VM console access
+      - Listen on 127.0.0.1 (localhost only, secure)
+      - Port auto-assigned (-1)
+      - Access via: virt-viewer VM_NAME or virt-manager
+
+      Alternative: SPICE (better performance, clipboard sharing)
+      <graphics type='spice' autoport='yes'>
+        <listen type='address' address='127.0.0.1'/>
+        <image compression='off'/>
+      </graphics>
+    -->
+    <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1'>
+      <listen type='address' address='127.0.0.1'/>
+    </graphics>
+
+    <!--
+      Video Adapter
+
+      Model: virtio (VirtIO GPU)
+      - Best performance for virtualized graphics
+      - Hardware-accelerated 2D/3D (optional)
+      - Supports high resolutions and multiple monitors
+
+      VRAM: 16MB (sufficient for most workloads)
+      - Increase for 4K displays or multi-monitor: vram='65536'
+
+      Alternative: QXL (SPICE-optimized)
+      <model type='qxl' vram='65536' heads='1'/>
+    -->
+    <video>
+      <model type='virtio' vram='16384' heads='1'>
+        <acceleration accel3d='no'/>
+      </model>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x0'/>
+    </video>
+
+    <!--
+      TPM 2.0 Emulation (Windows 11 Requirement)
+
+      Backend: swtpm (Software TPM emulator)
+      - Provides TPM 2.0 functionality without physical TPM chip
+      - Required for Windows 11 installation
+      - Enables BitLocker encryption, Secure Boot verification
+
+      Model: tpm-crb (Command Response Buffer)
+      - Modern TPM interface (faster than TIS)
+      - Recommended for UEFI systems
+
+      State Directory: /var/lib/libvirt/swtpm/VM_NAME/
+      - Persistent TPM state (keys, measurements)
+      - CRITICAL: Backup this directory with VM backups
+
+      Installation: sudo apt install swtpm swtpm-tools
+    -->
+    <tpm model='tpm-crb'>
+      <backend type='emulator' version='2.0'>
+        <encryption secret='tpm-VM_NAME'/>
+      </backend>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
+    </tpm>
+
+    <!--
+      VirtIO Memory Balloon
+
+      Purpose: Dynamic memory management
+      - Guest can return unused memory to host
+      - Improves memory utilization across multiple VMs
+      - Requires VirtIO balloon driver (balloon.sys) in Windows
+
+      Statistics: 10-second interval memory usage reporting
+      - View stats: virsh domstats VM_NAME --balloon
+    -->
+    <memballoon model='virtio'>
+      <stats period='10'/>
+      <address type='pci' domain='0x0000' bus='0x04' slot='0x00' function='0x0'/>
+    </memballoon>
+
+    <!--
+      VirtIO RNG (Random Number Generator)
+
+      Purpose: Provide entropy to guest OS
+      - Essential for cryptographic operations
+      - Improves security (strong random numbers)
+      - Speeds up boot (Linux VMs especially)
+
+      Backend: /dev/urandom (host entropy source)
+      - Use /dev/random for higher security (slower)
+
+      Rate: 1KB/period (prevents entropy starvation on host)
+    -->
+    <rng model='virtio'>
+      <backend model='random'>/dev/urandom</backend>
+      <rate bytes='1024' period='1000'/>
+      <address type='pci' domain='0x0000' bus='0x05' slot='0x00' function='0x0'/>
+    </rng>
+
+    <!--
+      Input Devices
+
+      Tablet: Absolute pointer positioning
+      - Syncs guest cursor with host cursor (no "grabbing")
+      - Essential for usability in virt-viewer/virt-manager
+      - Type: virtio for best performance
+
+      Keyboard: PS/2 keyboard emulation
+      - Standard keyboard input
+      - Compatible with all guest operating systems
+    -->
+    <input type='tablet' bus='virtio'>
+      <address type='pci' domain='0x0000' bus='0x06' slot='0x00' function='0x0'/>
+    </input>
+    <input type='keyboard' bus='ps2'/>
+
+    <!--
+      Serial Console (Optional)
+
+      Purpose: Text-based serial console access
+      - Useful for debugging boot issues
+      - Access via: virsh console VM_NAME
+      - Requires serial console configuration in guest OS
+    -->
+    <console type='pty'>
+      <target type='serial' port='0'/>
+    </console>
+
+    <!--
+      QEMU Guest Agent Channel
+
+      Purpose: Host-guest communication channel
+      - Enables virsh commands: shutdown, snapshot, fsfreeze
+      - Required for graceful shutdown (vs forced power-off)
+      - Provides guest OS information to host
+
+      Installation in Windows:
+      1. Mount virtio-win.iso
+      2. Run guest-agent/qemu-ga-x86_64.msi
+      3. Verify: virsh qemu-agent-command VM_NAME '{"execute":"guest-ping"}'
+
+      Highly recommended for production VMs
+    -->
+    <channel type='unix'>
+      <source mode='bind' path='/var/lib/libvirt/qemu/channel/target/domain-VM_NAME/org.qemu.guest_agent.0'/>
+      <target type='virtio' name='org.qemu.guest_agent.0'/>
+      <address type='virtio-serial' controller='0' bus='0' port='1'/>
+    </channel>
+
+    <!--
+      VirtIO Serial Controller
+      Required for QEMU guest agent channel
+    -->
+    <controller type='virtio-serial' index='0'>
+      <address type='pci' domain='0x0000' bus='0x02' slot='0x00' function='0x0'/>
+    </controller>
+
+    <!--
+      Standard PCI Controllers
+      Required for Q35 machine type
+    -->
+    <controller type='pci' index='0' model='pcie-root'/>
+    <controller type='pci' index='1' model='pcie-root-port'>
+      <model name='pcie-root-port'/>
+      <target chassis='1' port='0x10'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0' multifunction='on'/>
+    </controller>
+    <controller type='pci' index='2' model='pcie-root-port'>
+      <model name='pcie-root-port'/>
+      <target chassis='2' port='0x11'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x1'/>
+    </controller>
+    <controller type='pci' index='3' model='pcie-root-port'>
+      <model name='pcie-root-port'/>
+      <target chassis='3' port='0x12'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x2'/>
+    </controller>
+    <controller type='pci' index='4' model='pcie-root-port'>
+      <model name='pcie-root-port'/>
+      <target chassis='4' port='0x13'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x3'/>
+    </controller>
+    <controller type='pci' index='5' model='pcie-root-port'>
+      <model name='pcie-root-port'/>
+      <target chassis='5' port='0x14'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x4'/>
+    </controller>
+    <controller type='pci' index='6' model='pcie-root-port'>
+      <model name='pcie-root-port'/>
+      <target chassis='6' port='0x15'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x5'/>
+    </controller>
+
+    <!-- USB Controller (optional) -->
+    <controller type='usb' index='0' model='qemu-xhci'>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x08' function='0x0'/>
+    </controller>
+
+  </devices>
+
+  <!--
+    Security Configuration
+
+    SELinux/AppArmor: Enabled by default
+    - Confines QEMU process to security profile
+    - Limits access to only necessary files
+    - Recommended: Keep enabled for production
+
+    To disable (not recommended):
+    <seclabel type='none' model='apparmor'/>
+  -->
+
+  <!--
+    Additional Optional Configuration
+
+    1. VirtIO-FS Filesystem Sharing (for PST files)
+       Add after Windows installation completes:
+
+       <filesystem type='mount' accessmode='passthrough'>
+         <driver type='virtiofs'/>
+         <source dir='USER_HOME/outlook-data'/>
+         <target dir='outlook-share'/>
+         <readonly/>  <!-- CRITICAL: Ransomware protection -->
+         <address type='pci' domain='0x0000' bus='0x07' slot='0x00' function='0x0'/>
+       </filesystem>
+
+       Requires: WinFsp installed in Windows guest
+
+    2. PCI Device Passthrough (GPU, USB controller)
+       Advanced: Pass physical hardware to VM
+
+       <hostdev mode='subsystem' type='pci' managed='yes'>
+         <source>
+           <address domain='0x0000' bus='0x01' slot='0x00' function='0x0'/>
+         </source>
+         <address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>
+       </hostdev>
+
+    3. USB Device Passthrough
+       Pass USB devices to VM:
+
+       <hostdev mode='subsystem' type='usb' managed='yes'>
+         <source>
+           <vendor id='0x046d'/>  <!-- Logitech vendor ID -->
+           <product id='0xc077'/> <!-- M-U0007 mouse -->
+         </source>
+       </hostdev>
+  -->
+
+</domain>
+
+<!--
+  POST-INSTALLATION CHECKLIST
+
+  After Windows 11 installation completes:
+
+  1. ✅ Install VirtIO drivers (from virtio-win.iso):
+     - Device Manager → Update drivers → Browse virtio-win ISO
+     - Install all remaining drivers (network, balloon, serial, etc.)
+
+  2. ✅ Install QEMU Guest Agent:
+     - Mount virtio-win.iso in Windows
+     - Run: E:\guest-agent\qemu-ga-x86_64.msi
+     - Verify: virsh qemu-agent-command VM_NAME '{"execute":"guest-ping"}'
+
+  3. ✅ Windows Updates:
+     - Settings → Windows Update → Check for updates
+     - Install all critical and security updates
+
+  4. ✅ Activate Windows:
+     - Settings → Activation → Enter Windows 11 Pro Retail key
+     - Verify activation: slmgr.vbs /dlv
+
+  5. ✅ Performance Verification:
+     - Verify all Hyper-V enlightenments active:
+       virsh dumpxml VM_NAME | grep -c hyperv (should return >0)
+     - Check Device Manager: No yellow warning icons
+     - Run CrystalDiskMark: >40,000 IOPS expected
+
+  6. ✅ Security Hardening:
+     - Enable BitLocker (C: drive)
+     - Configure Windows Firewall (block all inbound except M365)
+     - Enable Windows Defender real-time protection
+
+  7. ✅ Optional Optimizations:
+     - Configure virtio-fs for PST file sharing
+     - Setup CPU pinning for dedicated cores
+     - Enable huge pages on host
+
+  8. ✅ Backup:
+     - Create baseline snapshot: virsh snapshot-create-as VM_NAME baseline
+     - Backup VM disk: cp /var/lib/libvirt/images/VM_NAME.qcow2 ~/backups/
+     - Backup NVRAM: cp /var/lib/libvirt/qemu/nvram/VM_NAME_VARS.fd ~/backups/
+     - Backup TPM state: cp -r /var/lib/libvirt/swtpm/VM_NAME ~/backups/
+
+  TROUBLESHOOTING TIPS:
+
+  - Black screen on boot: Check UEFI firmware path in <loader> element
+  - No disk detected during install: Load viostor driver from virtio-win ISO
+  - No network after install: Install NetKVM driver from virtio-win ISO
+  - Poor performance: Verify Hyper-V enlightenments with virsh dumpxml
+  - TPM not detected: Verify swtpm is installed and running
+
+  PERFORMANCE EXPECTATIONS (Fully Optimized):
+
+  - Boot Time: <25 seconds (target: 22s)
+  - Outlook Startup: <5 seconds (target: 4s)
+  - PST File Open (1GB): <3 seconds (target: 2s)
+  - Overall Performance: 85-95% of native Windows
+
+  REFERENCES:
+
+  - Main Guide: outlook-linux-guide/05-qemu-kvm-reference-architecture.md
+  - Performance: outlook-linux-guide/09-performance-optimization-playbook.md
+  - Security: research/06-security-hardening-analysis.md
+  - Troubleshooting: research/07-troubleshooting-failure-modes.md
+-->
