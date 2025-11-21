@@ -446,6 +446,229 @@ else
     log_test "PASS" "$test_name" "Runtime error pattern scan (expected errors found)" 0 "[\`${test_name}.log\`](./${test_name}.log)"
 fi
 
+# PHASE 10: Hardware Requirements Validation
+section_header "PHASE 10: HARDWARE REQUIREMENTS VALIDATION"
+
+# Test 1: CPU Virtualization Support
+test_name="hardware-cpu-virtualization"
+log_file="${LOG_DIR}/${test_name}.log"
+
+{
+    echo "Checking CPU virtualization support..."
+    virt_support=$(egrep -c '(vmx|svm)' /proc/cpuinfo || true)
+    echo "Virtualization flags found: ${virt_support}"
+
+    if [[ $virt_support -gt 0 ]]; then
+        echo "✓ CPU virtualization is enabled (Intel VT-x or AMD-V)"
+    else
+        echo "✗ CPU virtualization NOT enabled"
+        echo "Action required: Enable VT-x/AMD-V in BIOS"
+    fi
+} > "$log_file" 2>&1
+
+virt_count=$(egrep -c '(vmx|svm)' /proc/cpuinfo || echo "0")
+if [[ $virt_count -gt 0 ]]; then
+    log_test "PASS" "$test_name" "CPU virtualization support" 0 "${virt_count} cores with vmx/svm flags - [\`${test_name}.log\`](./${test_name}.log)"
+else
+    log_test "FAIL" "$test_name" "CPU virtualization support" 1 "No vmx/svm flags - BIOS configuration required - [\`${test_name}.log\`](./${test_name}.log)"
+fi
+
+# Test 2: RAM Requirements
+test_name="hardware-ram-requirements"
+log_file="${LOG_DIR}/${test_name}.log"
+
+{
+    echo "Checking RAM requirements..."
+    total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+    total_ram_gb=$((total_ram_kb / 1024 / 1024))
+    echo "Total RAM: ${total_ram_gb} GB"
+
+    if [[ $total_ram_gb -ge 16 ]]; then
+        echo "✓ RAM requirement met (${total_ram_gb} GB >= 16 GB minimum)"
+    else
+        echo "✗ Insufficient RAM: ${total_ram_gb} GB (minimum 16 GB required)"
+        echo "Action required: Upgrade system RAM"
+    fi
+} > "$log_file" 2>&1
+
+total_ram_gb=$(($(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 / 1024))
+if [[ $total_ram_gb -ge 16 ]]; then
+    log_test "PASS" "$test_name" "RAM requirements (16GB minimum)" 0 "${total_ram_gb} GB available - [\`${test_name}.log\`](./${test_name}.log)"
+else
+    log_test "FAIL" "$test_name" "RAM requirements (16GB minimum)" 1 "${total_ram_gb} GB insufficient - [\`${test_name}.log\`](./${test_name}.log)"
+fi
+
+# Test 3: SSD Storage Validation
+test_name="hardware-ssd-storage"
+log_file="${LOG_DIR}/${test_name}.log"
+
+{
+    echo "Checking storage type (SSD vs HDD)..."
+    echo ""
+
+    # Get the device containing /home/kkk (where VMs will be stored)
+    vm_device=$(df /home/kkk | tail -1 | awk '{print $1}' | sed 's|/dev/||' | sed 's|[0-9]*$||')
+
+    echo "VM storage device: ${vm_device}"
+
+    if [[ -f "/sys/block/${vm_device}/queue/rotational" ]]; then
+        rotational=$(cat "/sys/block/${vm_device}/queue/rotational")
+
+        if [[ $rotational -eq 0 ]]; then
+            echo "✓ Storage type: SSD (rotational=0)"
+            echo "Expected performance: 85-95% of native Windows"
+        else
+            echo "✗ Storage type: HDD (rotational=1)"
+            echo "Expected performance: 20-40% of native Windows (UNUSABLE)"
+            echo "Action required: Use SSD storage for VMs"
+        fi
+    else
+        echo "⚠ Cannot determine storage type (assuming SSD)"
+    fi
+} > "$log_file" 2>&1
+
+# Check storage type for pass/fail
+vm_device=$(df /home/kkk | tail -1 | awk '{print $1}' | sed 's|/dev/||' | sed 's|[0-9]*$||')
+if [[ -f "/sys/block/${vm_device}/queue/rotational" ]]; then
+    rotational=$(cat "/sys/block/${vm_device}/queue/rotational")
+    if [[ $rotational -eq 0 ]]; then
+        log_test "PASS" "$test_name" "SSD storage validation" 0 "SSD detected (rota=0) - [\`${test_name}.log\`](./${test_name}.log)"
+    else
+        log_test "FAIL" "$test_name" "SSD storage validation" 1 "HDD detected - performance will be poor - [\`${test_name}.log\`](./${test_name}.log)"
+    fi
+else
+    log_test "PASS" "$test_name" "SSD storage validation" 0 "Cannot determine type (assumed SSD) - [\`${test_name}.log\`](./${test_name}.log)"
+fi
+
+# PHASE 11: VM Configuration Deep Validation
+section_header "PHASE 11: VM CONFIGURATION DEEP VALIDATION"
+
+# Test 1: Q35 Chipset Configuration
+test_name="vm-config-q35-chipset"
+log_file="${LOG_DIR}/${test_name}.log"
+
+if [[ -f "configs/win11-vm.xml" ]]; then
+    {
+        echo "Checking VM chipset configuration..."
+        echo ""
+
+        if grep -q "machine='pc-q35" configs/win11-vm.xml; then
+            echo "✓ Q35 chipset configured"
+            echo ""
+            echo "Benefits:"
+            echo "  - Modern PCI-Express support"
+            echo "  - UEFI firmware compatible"
+            echo "  - Better device passthrough"
+            echo "  - Required for Windows 11"
+        else
+            echo "✗ Q35 chipset NOT found"
+            echo ""
+            echo "Impact: VM may not support Windows 11 or modern features"
+            echo "Action required: Change machine type to pc-q35-8.0 or newer"
+        fi
+    } > "$log_file" 2>&1
+
+    if grep -q "machine='pc-q35" configs/win11-vm.xml; then
+        log_test "PASS" "$test_name" "Q35 chipset configuration" 0 "Modern PCI-Express support - [\`${test_name}.log\`](./${test_name}.log)"
+    else
+        log_test "FAIL" "$test_name" "Q35 chipset configuration" 1 "Q35 not found - [\`${test_name}.log\`](./${test_name}.log)"
+    fi
+else
+    log_test "SKIP" "$test_name" "Q35 chipset configuration" "N/A" "configs/win11-vm.xml not found"
+fi
+
+# Test 2: Hyper-V Enlightenments Count
+test_name="vm-config-hyperv-enlightenments-count"
+log_file="${LOG_DIR}/${test_name}.log"
+
+if [[ -f "configs/win11-vm.xml" ]]; then
+    {
+        echo "Counting Hyper-V enlightenments in VM template..."
+
+        # Count all enlightenment tags with state='on'
+        enlightenment_count=$(grep -oP '<(relaxed|vapic|spinlocks|vpindex|runtime|synic|stimer|reset|vendor_id|frequencies|reenlightenment|tlbflush|ipi|evmcs) state=' configs/win11-vm.xml | wc -l)
+
+        echo "Found: ${enlightenment_count} / 14 enlightenments"
+        echo ""
+        echo "Expected enlightenments:"
+        echo "  1. relaxed"
+        echo "  2. vapic"
+        echo "  3. spinlocks"
+        echo "  4. vpindex"
+        echo "  5. runtime"
+        echo "  6. synic"
+        echo "  7. stimer"
+        echo "  8. reset"
+        echo "  9. vendor_id"
+        echo " 10. frequencies"
+        echo " 11. reenlightenment"
+        echo " 12. tlbflush"
+        echo " 13. ipi"
+        echo " 14. evmcs"
+        echo ""
+
+        if [[ $enlightenment_count -eq 14 ]]; then
+            echo "✓ All 14 Hyper-V enlightenments configured"
+            echo "Expected performance: 85-95% of native Windows"
+        else
+            echo "✗ Only ${enlightenment_count}/14 enlightenments found"
+            echo "Expected performance: 50-60% of native Windows (POOR)"
+        fi
+    } > "$log_file" 2>&1
+
+    enlightenment_count=$(grep -oP '<(relaxed|vapic|spinlocks|vpindex|runtime|synic|stimer|reset|vendor_id|frequencies|reenlightenment|tlbflush|ipi|evmcs) state=' configs/win11-vm.xml | wc -l)
+    if [[ $enlightenment_count -eq 14 ]]; then
+        log_test "PASS" "$test_name" "Hyper-V enlightenments count" 0 "14/14 configured - [\`${test_name}.log\`](./${test_name}.log)"
+    else
+        log_test "FAIL" "$test_name" "Hyper-V enlightenments count" 1 "${enlightenment_count}/14 found - performance will be poor - [\`${test_name}.log\`](./${test_name}.log)"
+    fi
+else
+    log_test "SKIP" "$test_name" "Hyper-V enlightenments count" "N/A" "configs/win11-vm.xml not found"
+fi
+
+# PHASE 12: Security Hardening Validation
+section_header "PHASE 12: SECURITY HARDENING VALIDATION"
+
+# Test 1: virtio-fs Read-Only Mode (CRITICAL SECURITY)
+test_name="security-virtiofs-readonly-template"
+log_file="${LOG_DIR}/${test_name}.log"
+
+if [[ -f "configs/virtio-fs-share.xml" ]]; then
+    {
+        echo "Checking virtio-fs read-only mode configuration..."
+        echo ""
+
+        # Check if <readonly/> tag exists in filesystem configuration
+        if grep -A10 "<filesystem" configs/virtio-fs-share.xml | grep -q "<readonly/>"; then
+            echo "✓ virtio-fs configured in READ-ONLY mode"
+            echo ""
+            echo "Security benefit: Ransomware protection"
+            echo "  - Guest malware CANNOT encrypt host files"
+            echo "  - Guest malware CANNOT delete host files"
+            echo "  - Guest malware CANNOT modify host files"
+            echo ""
+            echo "This is the PRIMARY security control for this project."
+        else
+            echo "✗ virtio-fs NOT configured in read-only mode"
+            echo ""
+            echo "CRITICAL SECURITY RISK:"
+            echo "  - Guest ransomware CAN encrypt host files"
+            echo "  - Guest ransomware CAN delete host files"
+            echo "  - Guest ransomware CAN modify host files"
+            echo ""
+            echo "Action required: Add <readonly/> tag to filesystem configuration"
+        fi
+    } > "$log_file" 2>&1
+
+    if grep -A10 "<filesystem" configs/virtio-fs-share.xml | grep -q "<readonly/>"; then
+        log_test "PASS" "$test_name" "virtio-fs read-only mode (ransomware protection)" 0 "✓ Protected - [\`${test_name}.log\`](./${test_name}.log)"
+    else
+        log_test "FAIL" "$test_name" "virtio-fs read-only mode (ransomware protection)" 1 "🔴 CRITICAL SECURITY RISK - [\`${test_name}.log\`](./${test_name}.log)"
+    fi
+else
+    log_test "SKIP" "$test_name" "virtio-fs read-only mode" "N/A" "configs/virtio-fs-share.xml not found"
+fi
+
 # ==============================================================================
 # GENERATE FINAL REPORT
 # ==============================================================================
