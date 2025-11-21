@@ -63,7 +63,7 @@ set -euo pipefail  # Exit on error, undefined variables, pipe failures
 
 SCRIPT_VERSION="1.0.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+source "$SCRIPT_DIR/lib/common.sh"
 
 # VM configuration
 VM_NAME=""
@@ -83,9 +83,8 @@ HOST_CPU_CORES=$(nproc)
 HOST_TOTAL_RAM=$(free -m | awk '/^Mem:/{print $2}')
 HOST_AVAIL_RAM=$(free -m | awk '/^Mem:/{print $7}')
 
-# Logging
-LOG_DIR="/var/log/win-qemu"
-LOG_FILE="${LOG_DIR}/start-vm-$(date +%Y%m%d-%H%M%S).log"
+# Logging (will be initialized by init_logging() from common.sh)
+# LOG_DIR and LOG_FILE are set by common.sh init_logging()
 
 # Color codes for output
 COLOR_RESET='\033[0m'
@@ -103,56 +102,6 @@ ICON_WARNING="⚠️ "
 ICON_INFO="ℹ️ "
 ICON_ROCKET="🚀"
 
-################################################################################
-# LOGGING FUNCTIONS
-################################################################################
-
-# Initialize logging
-init_logging() {
-    mkdir -p "$LOG_DIR" 2>/dev/null || true
-    touch "$LOG_FILE" 2>/dev/null || true
-    if [[ -f "$LOG_FILE" ]]; then
-        log "INFO" "=== VM Start Script Started ==="
-        log "INFO" "Timestamp: $(date)"
-        log "INFO" "User: $(whoami)"
-        log "INFO" "Script: $0 $*"
-    fi
-}
-
-# Log to file and optionally to stdout
-log() {
-    local level="$1"
-    shift
-    local message="$*"
-    if [[ -f "$LOG_FILE" ]]; then
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" >> "$LOG_FILE"
-    fi
-}
-
-log_info() {
-    log "INFO" "$@"
-    echo -e "${COLOR_CYAN}${ICON_INFO}${COLOR_RESET} $*"
-}
-
-log_success() {
-    log "SUCCESS" "$@"
-    echo -e "${COLOR_GREEN}${ICON_SUCCESS}${COLOR_RESET} $*"
-}
-
-log_warning() {
-    log "WARNING" "$@"
-    echo -e "${COLOR_YELLOW}${ICON_WARNING}${COLOR_RESET} $*" >&2
-}
-
-log_error() {
-    log "ERROR" "$@"
-    echo -e "${COLOR_RED}${ICON_ERROR}${COLOR_RESET} $*" >&2
-}
-
-log_step() {
-    log "STEP" "$@"
-    echo -e "\n${COLOR_BLUE}${ICON_ROCKET} $*${COLOR_RESET}"
-}
 
 ################################################################################
 # HELP FUNCTION
@@ -240,17 +189,6 @@ EOF
 # VALIDATION FUNCTIONS
 ################################################################################
 
-check_libvirtd() {
-    log_step "Checking libvirtd service..."
-
-    if ! systemctl is-active --quiet libvirtd; then
-        log_error "libvirtd service is not running"
-        log_error "Start with: sudo systemctl start libvirtd"
-        return 1
-    fi
-
-    log_success "libvirtd service is active"
-}
 
 check_vm_exists() {
     log_step "Checking if VM '$VM_NAME' exists..."
@@ -604,7 +542,8 @@ main() {
     parse_arguments "$@"
 
     # Initialize logging
-    init_logging "$@"
+    # Initialize logging
+    init_logging "start-vm"
 
     # Display banner
     echo ""

@@ -78,7 +78,7 @@ set -euo pipefail  # Exit on error, undefined variables, pipe failures
 
 SCRIPT_VERSION="1.0.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+source "$SCRIPT_DIR/lib/common.sh"
 
 # VM configuration
 VM_NAME=""
@@ -92,9 +92,8 @@ SKIP_CONFIRM=false
 DRY_RUN=false
 SHUTDOWN_TIMEOUT=60  # seconds
 
-# Logging
-LOG_DIR="/var/log/win-qemu"
-LOG_FILE="${LOG_DIR}/stop-vm-$(date +%Y%m%d-%H%M%S).log"
+# Logging (will be initialized by init_logging() from common.sh)
+# LOG_DIR and LOG_FILE are set by common.sh init_logging()
 
 # Color codes for output
 COLOR_RESET='\033[0m'
@@ -112,56 +111,6 @@ ICON_WARNING="⚠️ "
 ICON_INFO="ℹ️ "
 ICON_ROCKET="🚀"
 
-################################################################################
-# LOGGING FUNCTIONS
-################################################################################
-
-# Initialize logging
-init_logging() {
-    mkdir -p "$LOG_DIR" 2>/dev/null || true
-    touch "$LOG_FILE" 2>/dev/null || true
-    if [[ -f "$LOG_FILE" ]]; then
-        log "INFO" "=== VM Stop Script Started ==="
-        log "INFO" "Timestamp: $(date)"
-        log "INFO" "User: $(whoami)"
-        log "INFO" "Script: $0 $*"
-    fi
-}
-
-# Log to file and optionally to stdout
-log() {
-    local level="$1"
-    shift
-    local message="$*"
-    if [[ -f "$LOG_FILE" ]]; then
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" >> "$LOG_FILE"
-    fi
-}
-
-log_info() {
-    log "INFO" "$@"
-    echo -e "${COLOR_CYAN}${ICON_INFO}${COLOR_RESET} $*"
-}
-
-log_success() {
-    log "SUCCESS" "$@"
-    echo -e "${COLOR_GREEN}${ICON_SUCCESS}${COLOR_RESET} $*"
-}
-
-log_warning() {
-    log "WARNING" "$@"
-    echo -e "${COLOR_YELLOW}${ICON_WARNING}${COLOR_RESET} $*" >&2
-}
-
-log_error() {
-    log "ERROR" "$@"
-    echo -e "${COLOR_RED}${ICON_ERROR}${COLOR_RESET} $*" >&2
-}
-
-log_step() {
-    log "STEP" "$@"
-    echo -e "\n${COLOR_BLUE}${ICON_ROCKET} $*${COLOR_RESET}"
-}
 
 confirm() {
     if [[ "$SKIP_CONFIRM" == "true" ]]; then
@@ -593,7 +542,8 @@ main() {
     parse_arguments "$@"
 
     # Initialize logging
-    init_logging "$@"
+    # Initialize logging
+    init_logging "stop-vm"
 
     # Display banner
     echo ""
