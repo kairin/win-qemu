@@ -50,137 +50,53 @@ set -euo pipefail  # Exit on error, undefined variables, pipe failures
 # CONFIGURATION
 ################################################################################
 
-# Script directory (absolute path)
+# Script directory (absolute# Source shared library
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+source "$SCRIPT_DIR/lib/common.sh"
 
-# Default VM configuration
-DEFAULT_VM_NAME="win11-outlook"
+# Configuration
+DEFAULT_VM_NAME="win11-vm"
 DEFAULT_RAM_MB="8192"
 DEFAULT_VCPUS="4"
 DEFAULT_DISK_GB="100"
 
-# Paths
-CONFIG_TEMPLATE="${PROJECT_DIR}/configs/win11-vm.xml"
-SOURCE_ISO_DIR="${PROJECT_DIR}/source-iso"
+# Directories (using PROJECT_ROOT from common.sh)
+CONFIG_TEMPLATE="${PROJECT_ROOT}/configs/win11-vm.xml"
+SOURCE_ISO_DIR="${PROJECT_ROOT}/source-iso"
 VM_IMAGES_DIR="/var/lib/libvirt/images"
 NVRAM_DIR="/var/lib/libvirt/qemu/nvram"
 TPM_DIR="/var/lib/libvirt/swtpm"
-LOG_DIR="/var/log/win-qemu"
-LOG_FILE="${LOG_DIR}/create-vm-$(date +%Y%m%d-%H%M%S).log"
-
-# Color codes for output
-COLOR_RESET='\033[0m'
-COLOR_RED='\033[0;31m'
-COLOR_GREEN='\033[0;32m'
-COLOR_YELLOW='\033[0;33m'
-COLOR_BLUE='\033[0;34m'
-COLOR_CYAN='\033[0;36m'
-
-# Icons
-ICON_SUCCESS="✅"
-ICON_ERROR="❌"
-ICON_WARNING="⚠️ "
-ICON_INFO="ℹ️ "
-ICON_ROCKET="🚀"
-
-################################################################################
-# LOGGING FUNCTIONS
-################################################################################
-
-# Initialize logging
-init_logging() {
-    mkdir -p "$LOG_DIR"
-    touch "$LOG_FILE"
-    log_info "=== Windows 11 VM Creation Script Started ==="
-    log_info "Timestamp: $(date)"
-    log_info "User: $(whoami)"
-    log_info "Script: $0 $*"
-}
-
-# Log to file and optionally to stdout
-log() {
-    local level="$1"
-    shift
-    local message="$*"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" >> "$LOG_FILE"
-}
-
-log_info() {
-    log "INFO" "$@"
-    echo -e "${COLOR_CYAN}${ICON_INFO}${COLOR_RESET} $*"
-}
-
-log_success() {
-    log "SUCCESS" "$@"
-    echo -e "${COLOR_GREEN}${ICON_SUCCESS}${COLOR_RESET} $*"
-}
-
-log_warning() {
-    log "WARNING" "$@"
-    echo -e "${COLOR_YELLOW}${ICON_WARNING}${COLOR_RESET} $*" >&2
-}
-
-log_error() {
-    log "ERROR" "$@"
-    echo -e "${COLOR_RED}${ICON_ERROR}${COLOR_RESET} $*" >&2
-}
-
-log_step() {
-    log "STEP" "$@"
-    echo -e "\n${COLOR_BLUE}${ICON_ROCKET} $*${COLOR_RESET}"
-}
 
 ################################################################################
 # HELP FUNCTION
 ################################################################################
 
 show_help() {
-    cat << 'EOF'
-Windows 11 VM Creation Script for QEMU/KVM
-
+    cat <<'EOF'
 USAGE:
-    sudo ./scripts/create-vm.sh [OPTIONS]
+    create-vm.sh [OPTIONS]
+
+DESCRIPTION:
+    Creates a new Windows 11 virtual machine with QEMU/KVM, optimized for
+    running Microsoft 365 Outlook with near-native performance (85-95%).
 
 OPTIONS:
     --name NAME         VM name (default: win11-outlook)
-    --ram MB            RAM allocation in MB (default: 8192, minimum: 4096)
-    --vcpus COUNT       Number of vCPUs (default: 4, maximum: host cores)
-    --disk GB           Disk size in GB (default: 100, minimum: 60)
-    --dry-run           Preview actions without executing
-    --help              Display this help message
+    --ram MB           RAM in MB (default: 8192)
+    --vcpus NUM        Number of vCPUs (default: 4)
+    --disk GB          Disk size in GB (default: 100)
+    --iso PATH         Windows ISO path (default: source-iso/Win11.iso)
+    --virtio-iso PATH  VirtIO drivers ISO (default: source-iso/virtio-win.iso)
+    --dry-run          Validate without creating VM
+    --help             Show this help message
 
-EXAMPLES:
-    # Default installation (8GB RAM, 4 vCPUs, 100GB disk)
-    sudo ./scripts/create-vm.sh
+PREREQUISITES:
+    1. QEMU/KVM installed: sudo ./scripts/install-master.sh
 
-    # High-performance configuration (16GB RAM, 8 vCPUs, 200GB disk)
-    sudo ./scripts/create-vm.sh --name win11-pro --ram 16384 --vcpus 8 --disk 200
-
-    # Minimal configuration (4GB RAM, 2 vCPUs, 60GB disk)
-    sudo ./scripts/create-vm.sh --name win11-minimal --ram 4096 --vcpus 2 --disk 60
-
-    # Preview without creating VM
-    ./scripts/create-vm.sh --dry-run
-
-REQUIREMENTS:
-    1. Hardware:
-       - CPU with virtualization support (Intel VT-x or AMD-V)
-       - Minimum 16GB RAM (8GB for VM, 8GB for host)
-       - Minimum 8 CPU cores (4 for VM, 4 for host)
-       - SSD storage (HDD will result in poor performance)
-       - Minimum 150GB free disk space
-
-    2. Software:
-       - Ubuntu 25.10 or compatible Linux distribution
-       - QEMU/KVM packages installed:
-         * qemu-system-x86
-         * qemu-kvm
-         * libvirt-daemon-system
-         * libvirt-clients
-         * ovmf (UEFI firmware)
-         * swtpm (TPM 2.0 emulator)
-         * virt-manager (optional GUI)
+    2. User permissions:
+       - Must be in 'libvirt' and 'kvm' groups
+       - Run: sudo usermod -aG libvirt,kvm $USER
+       - Then logout/login or reboot
 
     3. ISOs (place in source-iso/ directory):
        - Win11.iso: Windows 11 installation media
@@ -274,15 +190,6 @@ EOF
 # PRE-FLIGHT VALIDATION FUNCTIONS
 ################################################################################
 
-check_root() {
-    log_step "Checking root permissions..."
-    if [[ $EUID -ne 0 ]]; then
-        log_error "This script must be run with sudo"
-        log_error "Usage: sudo $0"
-        exit 1
-    fi
-    log_success "Running with root permissions"
-}
 
 check_hardware_virtualization() {
     log_step "Checking hardware virtualization support..."
@@ -368,17 +275,6 @@ check_qemu_kvm_installed() {
     log_success "All required QEMU/KVM packages installed"
 }
 
-check_libvirtd_running() {
-    log_step "Checking libvirtd service..."
-    if ! systemctl is-active --quiet libvirtd; then
-        log_error "libvirtd service not running"
-        log_error "Start with: sudo systemctl start libvirtd"
-        log_error "Enable on boot: sudo systemctl enable libvirtd"
-        return 1
-    fi
-
-    log_success "libvirtd service is running"
-}
 
 check_user_groups() {
     log_step "Checking user group membership..."
@@ -406,15 +302,65 @@ check_user_groups() {
 check_isos_exist() {
     log_step "Checking for required ISO files..."
     local missing_isos=()
+    local win11_iso="${SOURCE_ISO_DIR}/Win11.iso"
+    local virtio_iso="${SOURCE_ISO_DIR}/virtio-win.iso"
 
-    if [[ ! -f "${SOURCE_ISO_DIR}/Win11.iso" ]]; then
-        missing_isos+=("Win11.iso")
+    # 1. Check Windows 11 ISO
+    if [[ ! -f "$win11_iso" ]]; then
+        log_warning "Win11.iso not found in ${SOURCE_ISO_DIR}"
+        
+        # Search for potential candidates
+        local candidates=($(find "$SOURCE_ISO_DIR" -maxdepth 1 -name "Win11*.iso" -o -name "Windows11*.iso"))
+        
+        if [[ ${#candidates[@]} -gt 0 ]]; then
+            log_info "Found potential Windows 11 ISOs:"
+            for i in "${!candidates[@]}"; do
+                echo "  [$i] $(basename "${candidates[$i]}")"
+            done
+            
+            if [[ "$DRY_RUN" == "false" ]]; then
+                read -p "Select an ISO to rename to Win11.iso (0-${#candidates[@]-1}, or 'n' to skip): " selection
+                if [[ "$selection" =~ ^[0-9]+$ ]] && [[ "$selection" -lt "${#candidates[@]}" ]]; then
+                    local selected_iso="${candidates[$selection]}"
+                    log_info "Renaming $(basename "$selected_iso") to Win11.iso..."
+                    mv "$selected_iso" "$win11_iso"
+                    log_success "Renamed successfully"
+                else
+                    missing_isos+=("Win11.iso")
+                fi
+            else
+                log_info "[DRY RUN] Would prompt to rename candidate ISO"
+                missing_isos+=("Win11.iso")
+            fi
+        else
+            missing_isos+=("Win11.iso")
+        fi
     fi
 
-    if [[ ! -f "${SOURCE_ISO_DIR}/virtio-win.iso" ]]; then
-        missing_isos+=("virtio-win.iso")
+    # 2. Check VirtIO Drivers ISO
+    if [[ ! -f "$virtio_iso" ]]; then
+        log_warning "virtio-win.iso not found"
+        
+        if [[ "$DRY_RUN" == "false" ]]; then
+            read -p "Download latest VirtIO drivers now? (y/n): " download_confirm
+            if [[ "$download_confirm" =~ ^[Yy]$ ]]; then
+                log_info "Downloading virtio-win.iso..."
+                if wget -O "$virtio_iso" --show-progress "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso"; then
+                    log_success "Download complete"
+                else
+                    log_error "Download failed"
+                    missing_isos+=("virtio-win.iso")
+                fi
+            else
+                missing_isos+=("virtio-win.iso")
+            fi
+        else
+            log_info "[DRY RUN] Would prompt to download virtio-win.iso"
+            missing_isos+=("virtio-win.iso")
+        fi
     fi
 
+    # Final Verification
     if [[ ${#missing_isos[@]} -gt 0 ]]; then
         log_error "Missing ISO files in ${SOURCE_ISO_DIR}:"
         for iso in "${missing_isos[@]}"; do
@@ -424,14 +370,12 @@ check_isos_exist() {
         log_error "Download locations:"
         log_error "  Windows 11: https://www.microsoft.com/software-download/windows11"
         log_error "  VirtIO drivers: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/"
-        log_error ""
-        log_error "Place ISOs in: ${SOURCE_ISO_DIR}/"
         return 1
     fi
 
     log_success "Required ISOs found:"
-    log_success "  - Win11.iso ($(du -h "${SOURCE_ISO_DIR}/Win11.iso" | cut -f1))"
-    log_success "  - virtio-win.iso ($(du -h "${SOURCE_ISO_DIR}/virtio-win.iso" | cut -f1))"
+    log_success "  - Win11.iso ($(du -h "$win11_iso" | cut -f1))"
+    log_success "  - virtio-win.iso ($(du -h "$virtio_iso" | cut -f1))"
 }
 
 check_disk_space() {
@@ -470,7 +414,7 @@ run_preflight_checks() {
     check_root || ((checks_failed++))
     check_hardware_virtualization || ((checks_failed++))
     check_qemu_kvm_installed || ((checks_failed++))
-    check_libvirtd_running || ((checks_failed++))
+    check_libvirtd || ((checks_failed++))
     check_user_groups || ((checks_failed++))
     check_isos_exist || ((checks_failed++))
     check_disk_space || ((checks_failed++))
@@ -713,7 +657,7 @@ main() {
     done
 
     # Initialize logging
-    init_logging "$@"
+    init_logging "create-vm"
 
     # Display banner
     echo ""
