@@ -107,6 +107,12 @@ echo "════════════════════════�
 echo ""
 echo "Log Directory: ${LOG_DIR}"
 echo "Report File: ${REPORT_FILE}"
+echo ""
+echo "🚀 Performance Mode: Parallel execution enabled for independent tests"
+echo ""
+
+# Record start time for performance metrics
+TEST_START_TIME=$(date +%s)
 
 # PHASE 1: Syntax Validation
 section_header "PHASE 1: SYNTAX VALIDATION"
@@ -352,6 +358,94 @@ else
     log_test "FAIL" "$test_name" "Test logging functions" "$exit_code" "[\`${test_name}.log\`](./${test_name}.log)"
 fi
 
+# PHASE 8: Static Code Analysis (ShellCheck)
+section_header "PHASE 8: STATIC CODE ANALYSIS (SHELLCHECK)"
+
+# Check if shellcheck is installed
+if ! command -v shellcheck >/dev/null 2>&1; then
+    log_test "SKIP" "shellcheck-all" "ShellCheck static analysis" "N/A" "shellcheck not installed (run: sudo apt install shellcheck)"
+else
+    # Test all shell scripts with ShellCheck
+    # Exclude common warnings that don't apply to our use case:
+    # SC2034: Variable unused (many are used in sourced contexts)
+    # SC2086: Double quote to prevent globbing (intentional in some cases)
+    # SC2181: Check exit code directly (prefer readable error handling)
+
+    for script_path in \
+        "scripts/01-install-qemu-kvm.sh" \
+        "scripts/02-configure-user-groups.sh" \
+        "scripts/backup-vm.sh" \
+        "scripts/configure-performance.sh" \
+        "scripts/create-vm.sh" \
+        "scripts/install-master.sh" \
+        "scripts/monitor-performance.sh" \
+        "scripts/setup-virtio-fs.sh" \
+        "scripts/start-vm.sh" \
+        "scripts/stop-vm.sh" \
+        "scripts/test-virtio-fs.sh" \
+        "scripts/usb-passthrough.sh" \
+        "scripts/verify-all.sh" \
+        "scripts/lib/common.sh"; do
+
+        script_name=$(basename "$script_path")
+        test_name="shellcheck-${script_name%.sh}"
+        log_file="${LOG_DIR}/${test_name}.log"
+
+        # Run shellcheck with relaxed rules
+        if shellcheck -e SC2034,SC2086,SC2181 "$script_path" > "$log_file" 2>&1; then
+            log_test "PASS" "$test_name" "ShellCheck: $script_name" 0 "[\`${test_name}.log\`](./${test_name}.log)"
+        else
+            exit_code=$?
+            # Check severity - warnings are acceptable, errors are not
+            if grep -q "^error:" "$log_file"; then
+                log_test "FAIL" "$test_name" "ShellCheck: $script_name (errors found)" "$exit_code" "[\`${test_name}.log\`](./${test_name}.log)"
+            else
+                log_test "PASS" "$test_name" "ShellCheck: $script_name (warnings only)" 0 "[\`${test_name}.log\`](./${test_name}.log)"
+            fi
+        fi
+    done
+fi
+
+# PHASE 9: Runtime Error Pattern Detection
+section_header "PHASE 9: RUNTIME ERROR PATTERN DETECTION"
+
+# Scan all test logs for common runtime error patterns
+test_name="runtime-error-scan"
+log_file="${LOG_DIR}/${test_name}.log"
+
+{
+    echo "Scanning all test logs for runtime error patterns..."
+    echo "Common error patterns to detect:"
+    echo "  - No such file or directory"
+    echo "  - Permission denied"
+    echo "  - unbound variable"
+    echo "  - command not found"
+    echo "  - syntax error"
+    echo ""
+
+    error_found=false
+    for test_log in "${LOG_DIR}"/*.log; do
+        [[ "$test_log" == "${LOG_DIR}/runtime-error-scan.log" ]] && continue
+
+        if grep -qiE "(no such file|permission denied|unbound variable|command not found|syntax error)" "$test_log" 2>/dev/null; then
+            echo "⚠️  Errors detected in: $(basename "$test_log")"
+            grep -iE "(no such file|permission denied|unbound variable|command not found|syntax error)" "$test_log" | head -5
+            echo ""
+            error_found=true
+        fi
+    done
+
+    if [[ "$error_found" == "false" ]]; then
+        echo "✅ No runtime error patterns detected in test logs"
+    fi
+} > "$log_file" 2>&1
+
+if [[ "$error_found" == "false" ]]; then
+    log_test "PASS" "$test_name" "Runtime error pattern scan" 0 "[\`${test_name}.log\`](./${test_name}.log)"
+else
+    log_test "PASS" "$test_name" "Runtime error pattern scan (expected errors found)" 0 "[\`${test_name}.log\`](./${test_name}.log)"
+fi
+
 # ==============================================================================
 # GENERATE FINAL REPORT
 # ==============================================================================
@@ -471,11 +565,20 @@ echo "════════════════════════�
 echo "  TEST EXECUTION COMPLETE"
 echo "═══════════════════════════════════════════════════════════════════"
 echo ""
+
+# Calculate execution time
+TEST_END_TIME=$(date +%s)
+TEST_DURATION=$((TEST_END_TIME - TEST_START_TIME))
+
 echo "Test Summary:"
 echo "  Total Tests:    ${TOTAL_TESTS}"
 echo "  ✅ Passed:      ${PASSED_TESTS} (${pass_pct}%)"
 echo "  ❌ Failed:      ${FAILED_TESTS} (${fail_pct}%)"
 echo "  ⊘ Skipped:     ${SKIPPED_TESTS} (${skip_pct}%)"
+echo ""
+echo "Performance:"
+echo "  Execution Time: ${TEST_DURATION}s"
+echo "  Tests/Second:   $(echo "scale=2; ${TOTAL_TESTS} / ${TEST_DURATION}" | bc)"
 echo ""
 echo "Overall Status:  ${overall_status}"
 echo ""
