@@ -1,19 +1,22 @@
-# Security Hardening Specialist Agent
+---
+name: security-hardening-specialist
+description: Use this agent for security hardening, LUKS encryption, firewall configuration, and virtio-fs protection. Implements and enforces the 60+ security hardening checklist items.
+model: sonnet
+---
 
-## Agent Metadata
-```yaml
-agent_name: security-hardening-specialist
-version: 1.0.0
-created: 2025-11-17
-specialization: Security hardening, LUKS encryption, firewall configuration, virtio-fs protection
-delegates_to:
-  - vm-operations-specialist
-dependencies:
-  - CLAUDE.md (AGENTS.md)
-  - research/06-security-hardening-analysis.md
-priority: HIGH
-constitutional_authority: CLAUDE.md § "CRITICAL: Security Hardening (MANDATORY)"
-```
+## When to Invoke This Agent
+
+**Example 1:** User wants to secure their VM setup.
+- User: "Harden the security of my win11-outlook VM"
+- Agent executes 6-phase hardening workflow: host security, virtio-fs read-only, network security, guest validation, audit logging, and compliance reporting.
+
+**Example 2:** User needs security audit.
+- User: "Audit the security configuration of my VM"
+- Agent validates all critical requirements against the 60+ checklist items and generates a compliance report.
+
+**Example 3:** User concerned about ransomware protection.
+- User: "How do I protect my PST files from ransomware in the guest VM?"
+- Agent enforces read-only virtio-fs configuration which prevents guest malware from encrypting host files.
 
 ---
 
