@@ -63,7 +63,17 @@ set -euo pipefail  # Exit on error, undefined variables, pipe failures
 readonly SCRIPT_NAME="$(basename "$0")"
 readonly SCRIPT_VERSION="1.0.0"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+source "$SCRIPT_DIR/lib/common.sh"
+
+# Compatibility aliases
+readonly RESET=$NC
+
+# Helper for colored output
+print_color() {
+    local color="$1"
+    shift
+    echo -e "${color}$*${RESET}"
+}
 
 # Logging configuration
 readonly LOG_DIR="/var/log/win-qemu"
@@ -86,65 +96,6 @@ DRY_RUN=false
 FORCE=false
 BACKUP_FILE=""
 
-# Color codes for output
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly CYAN='\033[0;36m'
-readonly BOLD='\033[1m'
-readonly RESET='\033[0m'
-
-#------------------------------------------------------------------------------
-# Utility Functions
-#------------------------------------------------------------------------------
-
-# Print colored output
-print_color() {
-    local color="$1"
-    shift
-    echo -e "${color}$*${RESET}"
-}
-
-# Logging functions
-log() {
-    local level="$1"
-    shift
-    local message="$*"
-    local timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
-
-    # Create log directory if it doesn't exist
-    if [[ ! -d "$LOG_DIR" ]]; then
-        mkdir -p "$LOG_DIR" 2>/dev/null || true
-    fi
-
-    # Write to log file
-    echo "[$timestamp] [$level] $message" >> "$LOG_FILE" 2>/dev/null || true
-
-    # Also print to console
-    case "$level" in
-        INFO)
-            print_color "$BLUE" "[INFO] $message"
-            ;;
-        SUCCESS)
-            print_color "$GREEN" "[✓] $message"
-            ;;
-        WARNING)
-            print_color "$YELLOW" "[!] $message"
-            ;;
-        ERROR)
-            print_color "$RED" "[✗] $message"
-            ;;
-        *)
-            echo "$message"
-            ;;
-    esac
-}
-
-log_info() { log "INFO" "$@"; }
-log_success() { log "SUCCESS" "$@"; }
-log_warning() { log "WARNING" "$@"; }
-log_error() { log "ERROR" "$@"; }
 
 # Print section header
 print_header() {
@@ -177,14 +128,7 @@ confirm() {
     if [[ "$FORCE" == "true" ]]; then
         return 0
     fi
-
-    local message="$1"
-    read -p "$message (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        log_info "Operation cancelled by user"
-        exit 0
-    fi
+    prompt_confirm "$1" || exit 0
 }
 
 #------------------------------------------------------------------------------
@@ -871,10 +815,9 @@ main() {
 # Script Entry Point
 #------------------------------------------------------------------------------
 
-# Parse command-line arguments
+# Parse arguments and run
 parse_arguments "$@"
-
-# Execute main function
+init_logging "setup-virtio-fs"
 main
 
 # Clean up temporary files

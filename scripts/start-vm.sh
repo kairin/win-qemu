@@ -193,6 +193,13 @@ EOF
 check_vm_exists() {
     log_step "Checking if VM '$VM_NAME' exists..."
 
+    # In dry-run mode, skip VM check since virsh may not be installed
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        log_warning "[DRY RUN] Skipping VM existence check (virsh not required in preview mode)"
+        log_info "[DRY RUN] Would verify VM '$VM_NAME' exists"
+        return 0
+    fi
+
     if ! virsh list --all | grep -qw "$VM_NAME"; then
         log_error "VM '$VM_NAME' not found"
         log_error ""
@@ -208,6 +215,14 @@ check_vm_exists() {
 
 check_vm_state() {
     log_step "Checking VM state..."
+
+    # In dry-run mode, skip state check since virsh may not be installed
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        VM_STATE="unknown (dry-run)"
+        log_warning "[DRY RUN] Skipping VM state check (virsh not required in preview mode)"
+        log_info "[DRY RUN] Would check if VM '$VM_NAME' is stopped before starting"
+        return 0
+    fi
 
     VM_STATE=$(virsh domstate "$VM_NAME" 2>/dev/null || echo "unknown")
     log_info "Current state: $VM_STATE"

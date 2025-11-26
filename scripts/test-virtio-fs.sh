@@ -28,13 +28,11 @@
 
 set -euo pipefail
 
-# Colors
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly CYAN='\033[0;36m'
-readonly BOLD='\033[1m'
-readonly RESET='\033[0m'
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/lib/common.sh"
+
+# Compatibility aliases
+readonly RESET=$NC
 
 # Configuration
 VM_NAME=""
@@ -50,20 +48,6 @@ TESTS_TOTAL=0
 # Utility Functions
 #------------------------------------------------------------------------------
 
-print_color() {
-    local color="$1"
-    shift
-    echo -e "${color}$*${RESET}"
-}
-
-print_header() {
-    echo ""
-    print_color "$CYAN" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    print_color "$CYAN$BOLD" "$*"
-    print_color "$CYAN" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo ""
-}
-
 test_result() {
     local status="$1"
     local message="$2"
@@ -71,13 +55,13 @@ test_result() {
     TESTS_TOTAL=$((TESTS_TOTAL + 1))
 
     if [[ "$status" == "PASS" ]]; then
-        print_color "$GREEN" "[✓] Test $TESTS_TOTAL: $message"
+        log_success "Test $TESTS_TOTAL: $message"
         TESTS_PASSED=$((TESTS_PASSED + 1))
     elif [[ "$status" == "FAIL" ]]; then
-        print_color "$RED" "[✗] Test $TESTS_TOTAL: $message"
+        log_error "Test $TESTS_TOTAL: $message"
         TESTS_FAILED=$((TESTS_FAILED + 1))
     else
-        print_color "$YELLOW" "[!] Test $TESTS_TOTAL: $message"
+        log_warning "Test $TESTS_TOTAL: $message"
     fi
 }
 
@@ -142,7 +126,7 @@ parse_arguments() {
 #------------------------------------------------------------------------------
 
 test_vm_exists() {
-    print_header "Test 1: VM Existence Check"
+    log_step "Test 1: VM Existence Check"
 
     if virsh dominfo "$VM_NAME" &>/dev/null; then
         test_result "PASS" "VM '$VM_NAME' exists"
@@ -153,7 +137,7 @@ test_vm_exists() {
 }
 
 test_virtiofs_configured() {
-    print_header "Test 2: VirtIO-FS Configuration Check"
+    log_step "Test 2: VirtIO-FS Configuration Check"
 
     if virsh dumpxml "$VM_NAME" | grep -q "type='virtiofs'"; then
         test_result "PASS" "VirtIO-FS device configured in VM"
@@ -171,7 +155,7 @@ test_virtiofs_configured() {
 }
 
 test_readonly_mode() {
-    print_header "Test 3: Read-Only Mode Verification"
+    log_step "Test 3: Read-Only Mode Verification"
 
     if virsh dumpxml "$VM_NAME" | grep -A 5 "type='virtiofs'" | grep -q "<readonly/>"; then
         test_result "PASS" "Read-only mode enforced (ransomware protection active)"
@@ -183,7 +167,7 @@ test_readonly_mode() {
 }
 
 test_source_directory() {
-    print_header "Test 4: Source Directory Check"
+    log_step "Test 4: Source Directory Check"
 
     if [[ -d "$SOURCE_DIR" ]]; then
         test_result "PASS" "Source directory exists: $SOURCE_DIR"
@@ -200,7 +184,7 @@ test_source_directory() {
 }
 
 test_directory_permissions() {
-    print_header "Test 5: Directory Permissions Check"
+    log_step "Test 5: Directory Permissions Check"
 
     local perms
     perms=$(stat -c "%a" "$SOURCE_DIR" 2>/dev/null || echo "000")
@@ -214,7 +198,7 @@ test_directory_permissions() {
 }
 
 test_create_host_file() {
-    print_header "Test 6: Host File Creation Test"
+    log_step "Test 6: Host File Creation Test"
 
     local test_file="$SOURCE_DIR/test-$(date +%Y%m%d-%H%M%S).txt"
 
@@ -260,7 +244,7 @@ EOF
 }
 
 test_file_readable() {
-    print_header "Test 7: Host File Readability Test"
+    log_step "Test 7: Host File Readability Test"
 
     local test_file
     test_file=$(ls -t "$SOURCE_DIR"/test-*.txt 2>/dev/null | head -n 1)
@@ -412,7 +396,8 @@ show_summary() {
 #------------------------------------------------------------------------------
 
 main() {
-    print_header "VirtIO-FS Verification Test Suite"
+    init_logging "test-virtio-fs"
+    log_step "VirtIO-FS Verification Test Suite"
 
     echo "Testing virtio-fs configuration for VM: $BOLD$VM_NAME$RESET"
     echo "Source directory: $BOLD$SOURCE_DIR$RESET"

@@ -33,11 +33,14 @@ set -euo pipefail
 # ==============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-STATE_DIR="${PROJECT_ROOT}/.installation-state"
-TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-LOG_FILE="${STATE_DIR}/user-groups-${TIMESTAMP}.log"
+source "$SCRIPT_DIR/lib/common.sh"
+
+# Use centralized logging (STATE_DIR and LOG_DIR inherited from common.sh)
 STATE_FILE="${STATE_DIR}/user-groups-configured.json"
+
+# ==============================================================================
+# LOGGING FUNCTIONS
+# ==============================================================================
 
 # Determine target user
 if [[ $# -ge 1 ]]; then
@@ -56,60 +59,6 @@ REQUIRED_GROUPS=(
     kvm      # Hardware virtualization access
 )
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
-
-# ==============================================================================
-# LOGGING FUNCTIONS
-# ==============================================================================
-
-init_logging() {
-    mkdir -p "$STATE_DIR"
-
-    echo "# User Group Configuration Log" > "$LOG_FILE"
-    echo "# Started: $(date +'%Y-%m-%d %H:%M:%S %Z')" >> "$LOG_FILE"
-    echo "# Hostname: $(hostname)" >> "$LOG_FILE"
-    echo "# Target user: $TARGET_USER" >> "$LOG_FILE"
-    echo "" >> "$LOG_FILE"
-}
-
-log() {
-    local level="$1"
-    shift
-    local message="$*"
-    local timestamp=$(date +'%Y-%m-%d %H:%M:%S')
-
-    echo "[${timestamp}] [${level}] ${message}" >> "$LOG_FILE"
-
-    case "$level" in
-        INFO)    echo -e "${BLUE}[INFO]${NC} ${message}" ;;
-        SUCCESS) echo -e "${GREEN}[SUCCESS]${NC} ${message}" ;;
-        WARN)    echo -e "${YELLOW}[WARN]${NC} ${message}" ;;
-        ERROR)   echo -e "${RED}[ERROR]${NC} ${message}" ;;
-        CMD)     echo -e "${YELLOW}[CMD]${NC} ${message}" ;;
-        *)       echo "[${level}] ${message}" ;;
-    esac
-}
-
-run_logged() {
-    local cmd="$*"
-    log CMD "$cmd"
-
-    if output=$($cmd 2>&1); then
-        echo "$output" >> "$LOG_FILE"
-        return 0
-    else
-        local exit_code=$?
-        echo "$output" >> "$LOG_FILE"
-        log ERROR "Command failed with exit code $exit_code"
-        return $exit_code
-    fi
-}
-
 # ==============================================================================
 # PRE-CHECKS
 # ==============================================================================
@@ -117,12 +66,7 @@ run_logged() {
 preflight_checks() {
     log INFO "Starting pre-flight checks"
 
-    # Check if running as root/sudo
-    if [[ $EUID -ne 0 ]]; then
-        log ERROR "This script must be run with sudo"
-        log ERROR "Usage: sudo $0 [username]"
-        exit 1
-    fi
+    check_root
 
     # Check if target user exists
     if ! id "$TARGET_USER" &>/dev/null; then
@@ -194,7 +138,7 @@ add_user_to_groups() {
     for group in "${REQUIRED_GROUPS[@]}"; do
         log INFO "Adding user to group '$group'"
 
-        if run_logged usermod -aG "$group" "$TARGET_USER"; then
+        if run_logged "Add user to group '$group'" usermod -aG "$group" "$TARGET_USER"; then
             log SUCCESS "Added user to group '$group'"
             groups_added+=("$group")
         else
@@ -276,7 +220,7 @@ main() {
     echo "======================================================================"
     echo ""
 
-    init_logging
+    init_logging "user-groups"
 
     log INFO "Configuring user group membership for QEMU/KVM access"
     log INFO "Log file: $LOG_FILE"

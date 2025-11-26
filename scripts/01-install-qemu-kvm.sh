@@ -26,100 +26,15 @@ set -euo pipefail  # Exit on error, undefined variable, or pipe failure
 # ==============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-STATE_DIR="${PROJECT_ROOT}/.installation-state"
-TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-LOG_FILE="${STATE_DIR}/installation-${TIMESTAMP}.log"
+source "$SCRIPT_DIR/lib/common.sh"
+
+# Use centralized logging (STATE_DIR and LOG_DIR inherited from common.sh)
 STATE_FILE="${STATE_DIR}/packages-installed.json"
-
-# Packages to install (10 core packages)
-PACKAGES=(
-    qemu-kvm                  # Core QEMU/KVM virtualization
-    libvirt-daemon-system     # Libvirt daemon (background service)
-    libvirt-clients           # Virsh command-line tools
-    bridge-utils              # Network bridge utilities
-    virt-manager              # GUI management interface
-    ovmf                      # UEFI firmware for VMs
-    swtpm                     # Software TPM 2.0 emulator
-    qemu-utils                # QEMU disk image tools
-    guestfs-tools             # Guest filesystem tools
-    virt-top                  # VM performance monitoring
-)
-
-# Colors for terminal output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
 
 # ==============================================================================
 # LOGGING FUNCTIONS
 # ==============================================================================
 
-# Initialize logging
-init_logging() {
-    mkdir -p "$STATE_DIR"
-
-    echo "# QEMU/KVM Installation Log" > "$LOG_FILE"
-    echo "# Started: $(date +'%Y-%m-%d %H:%M:%S %Z')" >> "$LOG_FILE"
-    echo "# Hostname: $(hostname)" >> "$LOG_FILE"
-    echo "# User: $SUDO_USER (running as: $USER)" >> "$LOG_FILE"
-    echo "# Ubuntu version: $(lsb_release -ds)" >> "$LOG_FILE"
-    echo "# Script: $0" >> "$LOG_FILE"
-    echo "#" >> "$LOG_FILE"
-    echo "" >> "$LOG_FILE"
-}
-
-# Log message to file and console
-log() {
-    local level="$1"
-    shift
-    local message="$*"
-    local timestamp=$(date +'%Y-%m-%d %H:%M:%S')
-
-    # Log to file
-    echo "[${timestamp}] [${level}] ${message}" >> "$LOG_FILE"
-
-    # Log to console with color
-    case "$level" in
-        INFO)
-            echo -e "${BLUE}[INFO]${NC} ${message}"
-            ;;
-        SUCCESS)
-            echo -e "${GREEN}[SUCCESS]${NC} ${message}"
-            ;;
-        WARN)
-            echo -e "${YELLOW}[WARN]${NC} ${message}"
-            ;;
-        ERROR)
-            echo -e "${RED}[ERROR]${NC} ${message}"
-            ;;
-        CMD)
-            echo -e "${YELLOW}[CMD]${NC} ${message}"
-            ;;
-        *)
-            echo "[${level}] ${message}"
-            ;;
-    esac
-}
-
-# Log command execution with output capture
-run_logged() {
-    local cmd="$*"
-    log CMD "$cmd"
-
-    # Execute command and capture output
-    if output=$($cmd 2>&1); then
-        echo "$output" >> "$LOG_FILE"
-        return 0
-    else
-        local exit_code=$?
-        echo "$output" >> "$LOG_FILE"
-        log ERROR "Command failed with exit code $exit_code"
-        return $exit_code
-    fi
-}
 
 # ==============================================================================
 # PRE-FLIGHT CHECKS
@@ -128,12 +43,7 @@ run_logged() {
 preflight_checks() {
     log INFO "Starting pre-flight checks"
 
-    # Check if running as root/sudo
-    if [[ $EUID -ne 0 ]]; then
-        log ERROR "This script must be run with sudo"
-        log ERROR "Usage: sudo $0"
-        exit 1
-    fi
+    check_root
 
     # Check Ubuntu version
     local ubuntu_version=$(lsb_release -rs)
@@ -236,7 +146,7 @@ check_existing_installation() {
 update_package_cache() {
     log INFO "Updating package cache"
 
-    if run_logged apt update; then
+    if run_logged "Update package cache" apt update; then
         log SUCCESS "Package cache updated"
     else
         log ERROR "Failed to update package cache"
@@ -249,7 +159,7 @@ install_packages() {
     log INFO "Packages to install: ${PACKAGES[*]}"
 
     # Install packages with progress indication
-    if run_logged apt install -y "${PACKAGES[@]}"; then
+    if run_logged "Install QEMU/KVM packages" apt install -y "${PACKAGES[@]}"; then
         log SUCCESS "All packages installed successfully"
     else
         log ERROR "Package installation failed"
@@ -318,7 +228,7 @@ configure_default_network() {
 
     # Start default network if not active
     if ! virsh net-list | grep -q "default.*active"; then
-        if run_logged virsh net-start default; then
+        if run_logged "Start default network" virsh net-start default; then
             log SUCCESS "Default network started"
         else
             log WARN "Could not start default network (may already be active)"
@@ -328,7 +238,7 @@ configure_default_network() {
     fi
 
     # Enable autostart for default network
-    if run_logged virsh net-autostart default; then
+    if run_logged "Enable default network autostart" virsh net-autostart default; then
         log SUCCESS "Default network autostart enabled"
     else
         log WARN "Could not enable default network autostart"
@@ -403,7 +313,8 @@ main() {
     echo ""
 
     # Initialize logging
-    init_logging
+    # Initialize logging
+    init_logging "install-qemu-kvm"
 
     log INFO "Starting QEMU/KVM installation"
     log INFO "Log file: $LOG_FILE"
