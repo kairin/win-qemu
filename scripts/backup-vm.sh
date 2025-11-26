@@ -112,7 +112,7 @@ set -euo pipefail  # Exit on error, undefined variables, pipe failures
 
 SCRIPT_VERSION="1.0.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+source "$SCRIPT_DIR/lib/common.sh"
 
 # VM configuration
 VM_NAME=""
@@ -164,56 +164,6 @@ ICON_WARNING="⚠️ "
 ICON_INFO="ℹ️ "
 ICON_ROCKET="🚀"
 
-################################################################################
-# LOGGING FUNCTIONS
-################################################################################
-
-# Initialize logging
-init_logging() {
-    mkdir -p "$LOG_DIR" 2>/dev/null || true
-    touch "$LOG_FILE" 2>/dev/null || true
-    if [[ -f "$LOG_FILE" ]]; then
-        log "INFO" "=== VM Backup Script Started ==="
-        log "INFO" "Timestamp: $(date)"
-        log "INFO" "User: $(whoami)"
-        log "INFO" "Script: $0 $*"
-    fi
-}
-
-# Log to file and optionally to stdout
-log() {
-    local level="$1"
-    shift
-    local message="$*"
-    if [[ -f "$LOG_FILE" ]]; then
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" >> "$LOG_FILE"
-    fi
-}
-
-log_info() {
-    log "INFO" "$@"
-    echo -e "${COLOR_CYAN}${ICON_INFO}${COLOR_RESET} $*"
-}
-
-log_success() {
-    log "SUCCESS" "$@"
-    echo -e "${COLOR_GREEN}${ICON_SUCCESS}${COLOR_RESET} $*"
-}
-
-log_warning() {
-    log "WARNING" "$@"
-    echo -e "${COLOR_YELLOW}${ICON_WARNING}${COLOR_RESET} $*" >&2
-}
-
-log_error() {
-    log "ERROR" "$@"
-    echo -e "${COLOR_RED}${ICON_ERROR}${COLOR_RESET} $*" >&2
-}
-
-log_step() {
-    log "STEP" "$@"
-    echo -e "\n${COLOR_BLUE}${ICON_ROCKET} $*${COLOR_RESET}"
-}
 
 confirm() {
     if [[ "$SKIP_CONFIRM" == "true" ]]; then
@@ -399,14 +349,6 @@ EOF
 # VALIDATION FUNCTIONS
 ################################################################################
 
-check_root() {
-    if [[ $EUID -ne 0 ]] && [[ "$DRY_RUN" == "false" ]]; then
-        log_error "This script requires root/sudo access for backup operations"
-        log_info "Use: sudo $0 $*"
-        log_info "Or use --dry-run to preview without root"
-        exit 1
-    fi
-}
 
 check_vm_exists() {
     log_step "Checking if VM '$VM_NAME' exists..."
@@ -695,15 +637,28 @@ export_disk_image() {
     fi
 
     local backup_disk_path="${CURRENT_BACKUP_DIR}/${VM_NAME}.qcow2"
+    local temp_backup_path="${backup_disk_path}.tmp"
     local start_time
     start_time=$(date +%s)
 
     if [[ "$COMPRESS_BACKUP" == "true" ]]; then
         log_info "Compressing disk image (this is slower but saves space)..."
-        qemu-img convert -O qcow2 -c "$VM_DISK_PATH" "$backup_disk_path"
+        if qemu-img convert -O qcow2 -c "$VM_DISK_PATH" "$temp_backup_path"; then
+            mv "$temp_backup_path" "$backup_disk_path"
+        else
+            log_error "Compression failed"
+            rm -f "$temp_backup_path"
+            return 1
+        fi
     else
         log_info "Copying disk image..."
-        cp --sparse=always "$VM_DISK_PATH" "$backup_disk_path"
+        if cp --sparse=always "$VM_DISK_PATH" "$temp_backup_path"; then
+            mv "$temp_backup_path" "$backup_disk_path"
+        else
+            log_error "Copy failed"
+            rm -f "$temp_backup_path"
+            return 1
+        fi
     fi
 
     local end_time

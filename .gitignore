@@ -137,3 +137,6 @@ __pycache__/
 !*.xml
 !*.yaml
 !*.yml
+
+.gemini/
+gha-creds-*.json

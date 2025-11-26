@@ -249,6 +249,14 @@ check_cpu_cores() {
 
 check_qemu_kvm_installed() {
     log_step "Checking QEMU/KVM installation..."
+
+    # In dry-run mode, skip package check to allow preview without QEMU installed
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        log_warning "[DRY RUN] Skipping QEMU/KVM package check"
+        log_info "[DRY RUN] Would verify: qemu-system-x86, qemu-kvm, libvirt-daemon-system, libvirt-clients, ovmf, swtpm"
+        return 0
+    fi
+
     local missing_packages=()
 
     local required_packages=(
@@ -278,6 +286,14 @@ check_qemu_kvm_installed() {
 
 check_user_groups() {
     log_step "Checking user group membership..."
+
+    # In dry-run mode, skip group check to allow preview
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        log_warning "[DRY RUN] Skipping user group check"
+        log_info "[DRY RUN] Would verify user is in libvirt and kvm groups"
+        return 0
+    fi
+
     local actual_user="${SUDO_USER:-$USER}"
     local missing_groups=()
 
@@ -301,6 +317,14 @@ check_user_groups() {
 
 check_isos_exist() {
     log_step "Checking for required ISO files..."
+
+    # In dry-run mode, skip ISO check to allow preview
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        log_warning "[DRY RUN] Skipping ISO file check"
+        log_info "[DRY RUN] Would verify: Win11.iso, virtio-win.iso in ${SOURCE_ISO_DIR}"
+        return 0
+    fi
+
     local missing_isos=()
     local win11_iso="${SOURCE_ISO_DIR}/Win11.iso"
     local virtio_iso="${SOURCE_ISO_DIR}/virtio-win.iso"
@@ -380,6 +404,15 @@ check_isos_exist() {
 
 check_disk_space() {
     log_step "Checking available disk space..."
+
+    # In dry-run mode, still check disk space but don't fail
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        local vm_images_avail
+        vm_images_avail=$(df -BG "$VM_IMAGES_DIR" 2>/dev/null | awk 'NR==2 {print $4}' | sed 's/G//' || echo "0")
+        log_warning "[DRY RUN] Disk space check: ${vm_images_avail}GB available (150GB minimum required)"
+        return 0
+    fi
+
     local vm_images_avail
     vm_images_avail=$(df -BG "$VM_IMAGES_DIR" | awk 'NR==2 {print $4}' | sed 's/G//')
 
@@ -395,6 +428,14 @@ check_disk_space() {
 
 check_template_exists() {
     log_step "Checking for VM template configuration..."
+
+    # In dry-run mode, skip template check but show what would be verified
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        log_warning "[DRY RUN] Skipping template check"
+        log_info "[DRY RUN] Would verify: $CONFIG_TEMPLATE exists"
+        return 0
+    fi
+
     if [[ ! -f "$CONFIG_TEMPLATE" ]]; then
         log_error "Template configuration not found: $CONFIG_TEMPLATE"
         log_error "Ensure configs/win11-vm.xml exists in the project directory"

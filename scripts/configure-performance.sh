@@ -88,7 +88,7 @@ set -euo pipefail
 
 SCRIPT_VERSION="1.0.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+source "$SCRIPT_DIR/lib/common.sh"
 
 # VM configuration
 VM_NAME=""
@@ -129,34 +129,6 @@ OPTIMIZED_NETWORK_SPEED=0
 HOST_CPU_CORES=$(nproc)
 HOST_TOTAL_RAM=$(free -m | awk '/^Mem:/{print $2}')
 
-# Color codes for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-MAGENTA='\033[0;35m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
-
-#==============================================================================
-# Helper Functions
-#==============================================================================
-
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $*"
-}
-
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $*"
-}
-
-log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $*"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $*" >&2
-}
 
 log_section() {
     echo ""
@@ -169,18 +141,7 @@ confirm() {
     if [[ "$SKIP_CONFIRM" == "true" ]]; then
         return 0
     fi
-
-    local prompt="$1"
-    local response
-    read -r -p "$(echo -e "${YELLOW}[CONFIRM]${NC} ${prompt} (y/N): ")" response
-    case "$response" in
-        [yY][eE][sS]|[yY])
-            return 0
-            ;;
-        *)
-            return 1
-            ;;
-    esac
+    prompt_confirm "$1" || return 1
 }
 
 show_help() {
@@ -259,14 +220,6 @@ EOF
 # Pre-flight Checks
 #==============================================================================
 
-check_root() {
-    if [[ $EUID -ne 0 ]] && [[ "$DRY_RUN" == "false" ]]; then
-        log_error "This script must be run as root for VM modifications"
-        log_info "Use: sudo $0 $*"
-        log_info "Or use --dry-run to preview changes without root"
-        exit 1
-    fi
-}
 
 check_requirements() {
     log_section "Checking Requirements"
@@ -289,9 +242,16 @@ check_requirements() {
     done
 
     if [[ ${#missing_deps[@]} -gt 0 ]]; then
-        log_error "Missing required dependencies: ${missing_deps[*]}"
-        log_info "Install with: sudo apt install libvirt-clients libvirt-daemon-system libxml2-utils"
-        exit 1
+        if [[ "$DRY_RUN" == "true" ]]; then
+            log_warning "[DRY RUN] Missing dependencies: ${missing_deps[*]}"
+            log_info "[DRY RUN] Would require: sudo apt install libvirt-clients libvirt-daemon-system libxml2-utils"
+            log_info "[DRY RUN] Continuing in preview mode..."
+            return 0
+        else
+            log_error "Missing required dependencies: ${missing_deps[*]}"
+            log_info "Install with: sudo apt install libvirt-clients libvirt-daemon-system libxml2-utils"
+            exit 1
+        fi
     fi
 
     log_success "All required dependencies found"
@@ -299,6 +259,13 @@ check_requirements() {
 
 check_vm_exists() {
     log_info "Checking if VM '$VM_NAME' exists..."
+
+    # In dry-run mode, skip VM check since virsh may not be installed
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_warning "[DRY RUN] Skipping VM existence check (virsh not required in preview mode)"
+        log_info "[DRY RUN] Would verify VM '$VM_NAME' exists"
+        return 0
+    fi
 
     if ! virsh list --all | grep -qw "$VM_NAME"; then
         log_error "VM '$VM_NAME' does not exist"
@@ -311,6 +278,14 @@ check_vm_exists() {
 }
 
 check_vm_state() {
+    # In dry-run mode, skip state check since virsh may not be installed
+    if [[ "$DRY_RUN" == "true" ]]; then
+        VM_STATE="unknown (dry-run)"
+        log_warning "[DRY RUN] Skipping VM state check (virsh not required in preview mode)"
+        log_info "[DRY RUN] Would check if VM '$VM_NAME' is stopped before applying changes"
+        return 0
+    fi
+
     VM_STATE=$(virsh domstate "$VM_NAME" 2>/dev/null || echo "unknown")
     log_info "VM state: $VM_STATE"
 
@@ -350,6 +325,16 @@ check_vm_state() {
 get_vm_xml_path() {
     # Get VM XML and save to temp file
     VM_XML_PATH="/tmp/${VM_NAME}-current.xml"
+
+    # In dry-run mode, create a placeholder file since virsh may not be available
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_warning "[DRY RUN] Skipping VM XML dump (virsh not required in preview mode)"
+        log_info "[DRY RUN] Would save VM XML to $VM_XML_PATH"
+        # Create empty placeholder for dry-run
+        touch "$VM_XML_PATH" 2>/dev/null || true
+        return 0
+    fi
+
     virsh dumpxml "$VM_NAME" > "$VM_XML_PATH"
 
     if [[ ! -f "$VM_XML_PATH" ]]; then
@@ -1000,6 +985,13 @@ PYTHON_SCRIPT
 validate_xml() {
     log_section "Validating XML Configuration"
 
+    # In dry-run mode, skip XML validation since we don't have real VM XML
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_warning "[DRY RUN] Skipping XML validation (no actual VM XML in preview mode)"
+        log_info "[DRY RUN] Would validate XML syntax and libvirt compatibility"
+        return 0
+    fi
+
     log_info "Checking XML syntax..."
 
     if ! xmllint --noout "$VM_XML_PATH" 2>&1; then
@@ -1411,7 +1403,13 @@ main() {
     log_info "Target: 85-95% native Windows performance"
 
     # Pre-flight checks
-    check_root
+    # Initialize logging
+    init_logging "configure-performance"
+
+    # Check root (unless dry run)
+    if [[ "$DRY_RUN" == "false" ]]; then
+        check_root
+    fi
     check_requirements
     check_vm_exists
     check_vm_state

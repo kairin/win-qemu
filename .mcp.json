@@ -8,14 +8,8 @@
       }
     },
     "github": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-github"
-      ],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
-      }
+      "command": "/home/kkk/Apps/win-qemu/scripts/mcp/start-github-mcp.sh",
+      "args": []
     }
   }
 }

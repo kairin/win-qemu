@@ -39,55 +39,16 @@ set -euo pipefail
 # ==============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-STATE_DIR="${PROJECT_ROOT}/.installation-state"
-TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-MASTER_LOG="${STATE_DIR}/master-installation-${TIMESTAMP}.log"
-REPORT_FILE="${PROJECT_ROOT}/docs-repo/qemu-kvm-installation-report.md"
+source "$SCRIPT_DIR/lib/common.sh"
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-BOLD='\033[1m'
-NC='\033[0m'
+# Use centralized logging (STATE_DIR and LOG_DIR inherited from common.sh)
+MASTER_LOG="${LOG_DIR}/master-installation-${TIMESTAMP}.log"
+REPORT_FILE="${PROJECT_ROOT}/docs-repo/qemu-kvm-installation-report.md"
 
 # ==============================================================================
 # LOGGING
 # ==============================================================================
 
-init_logging() {
-    mkdir -p "$STATE_DIR"
-
-    cat > "$MASTER_LOG" <<EOF
-# QEMU/KVM Master Installation Log
-# Started: $(date +'%Y-%m-%d %H:%M:%S %Z')
-# Hostname: $(hostname)
-# User: ${SUDO_USER:-$USER}
-# Script: $0
-
-EOF
-}
-
-log() {
-    local level="$1"
-    shift
-    local message="$*"
-    local timestamp=$(date +'%Y-%m-%d %H:%M:%S')
-
-    echo "[${timestamp}] [${level}] ${message}" >> "$MASTER_LOG"
-
-    case "$level" in
-        INFO)    echo -e "${BLUE}[INFO]${NC} ${message}" ;;
-        SUCCESS) echo -e "${GREEN}[✓]${NC} ${message}" ;;
-        WARN)    echo -e "${YELLOW}[!]${NC} ${message}" ;;
-        ERROR)   echo -e "${RED}[✗]${NC} ${message}" ;;
-        STEP)    echo -e "${CYAN}[STEP]${NC} ${message}" ;;
-        *)       echo "[${level}] ${message}" ;;
-    esac
-}
 
 # ==============================================================================
 # PRE-CHECKS
@@ -96,13 +57,7 @@ log() {
 check_prerequisites() {
     log STEP "Checking prerequisites"
 
-    # Must run as root
-    if [[ $EUID -ne 0 ]]; then
-        log ERROR "This script must be run with sudo"
-        log ERROR "Usage: sudo $0"
-        exit 1
-    fi
-    log SUCCESS "Running with sudo privileges"
+    check_root
 
     # Check Ubuntu version
     local ubuntu_version=$(lsb_release -rs)
@@ -569,7 +524,7 @@ main() {
     echo "======================================================================"
     echo ""
 
-    init_logging
+    init_logging "install-master"
     log INFO "Starting master installation"
     log INFO "Master log: $MASTER_LOG"
     echo ""
