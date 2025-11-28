@@ -26,7 +26,7 @@ All detailed requirements and protocols have been modularized. You **MUST** cons
 
 ### 4. [Agent System](docs-repo/06-constitutional/04-agent-system.md) 🤖
 **Multi-Agent Protocols.**
-*Overview of the 14-agent system and how to invoke them.*
+*Overview of the 62-agent 4-tier hierarchical system and slash commands.*
 
 ### 5. [Implementation & Workflows](docs-repo/06-constitutional/05-workflow.md) ⚙️
 **Phases & Troubleshooting.**
