@@ -112,7 +112,7 @@ Example: 20251117-150000-feat-vm-creation-automation
 - First-time setup
 
 **Key Features**:
-- 14-agent registry
+- 62-agent hierarchical registry (4-tier: Opus/Sonnet/Haiku)
 - 5-phase execution model
 - Dependency management
 - Parallel execution optimization (75% of agents)

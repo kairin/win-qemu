@@ -41,11 +41,15 @@ Specialized single-task agents invoked by parent Sonnet agents:
 ## Slash Commands
 | Command | Entry Point | Description |
 |---------|-------------|-------------|
-| `/guardian-health` | 001→007→07X | System readiness validation |
+| `/guardian-health` | 001→007→07X | System readiness validation (42 prerequisites) |
 | `/guardian-vm` | 001→002→02X | Complete VM creation workflow |
-| `/guardian-optimize` | 001→003→03X | Performance optimization |
-| `/guardian-security` | 001→004→04X | 60+ security hardening |
+| `/guardian-optimize` | 001→003→03X | Performance optimization (85-95% native) |
+| `/guardian-security` | 001→004→04X | 60+ security hardening checklist |
 | `/guardian-commit` | 001→009→09X | Constitutional Git workflow |
+| `/guardian-backup` | 001→004→046 | Encrypted backup creation |
+| `/guardian-cleanup` | 001→011→11X | Repository hygiene and redundancy removal |
+| `/guardian-documentation` | 001→010→10X | Documentation sync and validation |
+| `/guardian-virtiofs` | 001→005→05X | virtio-fs setup with read-only protection |
 
 ## Agent Delegation Flow
 ```
