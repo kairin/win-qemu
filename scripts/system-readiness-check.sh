@@ -30,19 +30,40 @@ STATE_DIR="${PROJECT_ROOT}/.installation-state"
 TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
 REPORT_FILE="${STATE_DIR}/readiness-check-${TIMESTAMP}.json"
 
+# Source the interactive results library
+if [[ -f "${SCRIPT_DIR}/lib/interactive-results.sh" ]]; then
+    source "${SCRIPT_DIR}/lib/interactive-results.sh"
+    HAS_INTERACTIVE_LIB=true
+else
+    HAS_INTERACTIVE_LIB=false
+fi
+
 # Command-line flags
 JSON_ONLY=false
 NO_FIXES=false
+FORCE_INTERACTIVE=false
+FORCE_AUTOMATION=false
 
 # Parse arguments
 for arg in "$@"; do
     case $arg in
         --json-only) JSON_ONLY=true ;;
         --no-fixes) NO_FIXES=true ;;
+        --interactive) FORCE_INTERACTIVE=true ;;
+        --automation|--ci) FORCE_AUTOMATION=true ;;
         --help)
-            echo "Usage: $0 [--json-only] [--no-fixes]"
-            echo "  --json-only  Only output JSON (no interactive UI)"
-            echo "  --no-fixes   Don't show fix commands"
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --json-only     Only output JSON (no interactive UI)"
+            echo "  --no-fixes      Don't show fix commands"
+            echo "  --interactive   Force interactive mode (show menus)"
+            echo "  --automation    Force automation/CI mode (exit with codes)"
+            echo "  --ci            Alias for --automation"
+            echo ""
+            echo "Behavior:"
+            echo "  - Interactive mode (terminal): Shows menu after checks"
+            echo "  - Automation mode (CI/CD): Exits with code 0 (pass) or 1 (fail)"
             exit 0
             ;;
     esac
@@ -64,11 +85,55 @@ WARNING_CHECKS=0
 # Ensure state directory exists
 mkdir -p "$STATE_DIR"
 
+# ==============================================================================
+# MODE DETECTION (Interactive vs CI/CD)
+# ==============================================================================
+
+# Determine if we should run in interactive mode
+# Priority: --automation/--ci flag > --interactive flag > --json-only flag > auto-detect
+should_run_interactive() {
+    # Forced automation mode
+    if [[ "$FORCE_AUTOMATION" == "true" ]]; then
+        return 1
+    fi
+
+    # Forced interactive mode
+    if [[ "$FORCE_INTERACTIVE" == "true" ]]; then
+        return 0
+    fi
+
+    # JSON-only implies non-interactive
+    if [[ "$JSON_ONLY" == "true" ]]; then
+        return 1
+    fi
+
+    # Auto-detect: check if stdin/stdout are terminals
+    if [[ -t 0 && -t 1 ]]; then
+        return 0  # Interactive
+    else
+        return 1  # Non-interactive (piped, CI/CD, etc.)
+    fi
+}
+
+# Get mode as string for logging
+get_mode_string() {
+    if should_run_interactive; then
+        echo "interactive"
+    else
+        echo "automation"
+    fi
+}
+
+# Check if gum is installed (only needed for interactive mode)
+check_gum_available() {
+    command -v gum &> /dev/null
+}
+
 # Check if gum is installed
-if ! command -v gum &> /dev/null && [ "$JSON_ONLY" = false ]; then
+if ! check_gum_available && should_run_interactive; then
     echo "❌ ERROR: 'gum' is required for interactive UI"
     echo "Install with: go install github.com/charmbracelet/gum@latest"
-    echo "Or run with --json-only flag"
+    echo "Or run with --json-only or --automation flag"
     exit 1
 fi
 
@@ -85,16 +150,13 @@ show_header() {
     fi
 
     clear
-    gum style \
-        --border double \
-        --border-foreground 212 \
-        --padding "1 2" \
-        --margin "1 0" \
-        "QEMU/KVM System Readiness Check" \
-        "42+ Point Automated Prerequisite Validation" \
-        "" \
-        "Project: win-qemu" \
-        "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+    cat <<EOF | gum style --border double --border-foreground 212 --padding "1 2" --margin "1 0"
+QEMU/KVM System Readiness Check
+42+ Point Automated Prerequisite Validation
+
+Project: win-qemu
+Timestamp: $(date '+%Y-%m-%d %H:%M:%S')
+EOF
 
     if command -v fastfetch &> /dev/null; then
         gum style --foreground 86 "System Information:"
@@ -656,19 +718,18 @@ show_summary() {
     fi
 
     echo ""
-    gum style \
-        --border double \
-        --border-foreground 212 \
-        --padding "1 2" \
-        --margin "1 0" \
-        "Readiness Check Complete" \
-        "" \
-        "Total Checks: $TOTAL_CHECKS" \
-        "✅ Passed: $PASSED_CHECKS" \
-        "❌ Failed: $FAILED_CHECKS" \
-        "⚠️  Warnings: $WARNING_CHECKS" \
-        "" \
-        "Pass Rate: $(awk "BEGIN {printf \"%.1f%%\", ($PASSED_CHECKS/$TOTAL_CHECKS)*100}")"
+    local pass_rate
+    pass_rate=$(awk "BEGIN {printf \"%.1f%%\", ($PASSED_CHECKS/$TOTAL_CHECKS)*100}")
+    cat <<EOF | gum style --border double --border-foreground 212 --padding "1 2" --margin "1 0"
+Readiness Check Complete
+
+Total Checks: $TOTAL_CHECKS
+✅ Passed: $PASSED_CHECKS
+❌ Failed: $FAILED_CHECKS
+⚠️  Warnings: $WARNING_CHECKS
+
+Pass Rate: $pass_rate
+EOF
 
     echo ""
     if [ "$FAILED_CHECKS" -eq 0 ]; then
@@ -691,20 +752,183 @@ show_summary() {
 }
 
 # ==============================================================================
+# INTERACTIVE RESULT HANDLING
+# ==============================================================================
+
+# Display fix instructions for failed checks
+show_fix_instructions() {
+    if [ "$JSON_ONLY" = true ]; then
+        return
+    fi
+
+    echo ""
+    gum style --bold --foreground 226 "Fix Instructions for Failed Checks:"
+    echo ""
+
+    for check_name in "${!CHECK_RESULTS[@]}"; do
+        local status="${CHECK_RESULTS[$check_name]}"
+        local fix="${CHECK_FIXES[$check_name]}"
+
+        if [[ "$status" == "fail" && -n "$fix" ]]; then
+            gum style --foreground 196 "❌ ${CHECK_MESSAGES[$check_name]}"
+            gum style --foreground 226 --italic "   💡 Fix: $fix"
+            echo ""
+        fi
+    done
+
+    for check_name in "${!CHECK_RESULTS[@]}"; do
+        local status="${CHECK_RESULTS[$check_name]}"
+        local fix="${CHECK_FIXES[$check_name]}"
+
+        if [[ "$status" == "warn" && -n "$fix" ]]; then
+            gum style --foreground 226 "⚠️  ${CHECK_MESSAGES[$check_name]}"
+            gum style --foreground 226 --italic "   💡 Recommendation: $fix"
+            echo ""
+        fi
+    done
+}
+
+# Show interactive menu after checks complete
+show_interactive_menu() {
+    local status="$1"
+
+    echo ""
+
+    # Build menu options based on status
+    local options=()
+
+    # All statuses can view detailed report
+    options+=("📋 View JSON Report")
+
+    # Show fix instructions if there are issues
+    if [[ "$FAILED_CHECKS" -gt 0 || "$WARNING_CHECKS" -gt 0 ]]; then
+        options+=("🔧 Show All Fix Instructions")
+    fi
+
+    # Only non-blocking can continue
+    if [[ "$FAILED_CHECKS" -eq 0 ]]; then
+        options+=("▶️  Continue (Ready to Create VM)")
+    else
+        options+=("▶️  Continue Anyway (Not Recommended)")
+    fi
+
+    # Always allow retry and navigation
+    options+=("🔄 Retry All Checks")
+    options+=("← Back to Main Menu")
+    options+=("🚪 Exit")
+
+    # Status display
+    local status_color=46
+    local status_emoji="✅"
+    local status_label="ALL CHECKS PASSED"
+
+    if [[ "$FAILED_CHECKS" -gt 0 ]]; then
+        status_color=196
+        status_emoji="❌"
+        status_label="ERRORS DETECTED - Please Fix Before Continuing"
+    elif [[ "$WARNING_CHECKS" -gt 0 ]]; then
+        status_color=226
+        status_emoji="⚠️"
+        status_label="PASSED WITH WARNINGS"
+    fi
+
+    cat <<EOF | gum style --border rounded --border-foreground "$status_color" --padding "1 2" --margin "1 0"
+$status_emoji $status_label
+
+✅ Passed: $PASSED_CHECKS | ⚠️ Warnings: $WARNING_CHECKS | ❌ Failed: $FAILED_CHECKS
+EOF
+
+    echo ""
+    gum style --foreground "$status_color" "What would you like to do?"
+    echo ""
+
+    local choice
+    choice=$(printf '%s\n' "${options[@]}" | gum choose)
+
+    case "$choice" in
+        "📋 View JSON Report")
+            if [[ -f "$REPORT_FILE" ]]; then
+                gum pager < "$REPORT_FILE"
+            else
+                echo "Report file not found: $REPORT_FILE"
+            fi
+            # Return to menu
+            show_interactive_menu "$status"
+            ;;
+        "🔧 Show All Fix Instructions")
+            show_fix_instructions
+            echo ""
+            gum style --foreground 240 "Press any key to continue..."
+            read -n 1 -s -r
+            # Return to menu
+            show_interactive_menu "$status"
+            ;;
+        "▶️  Continue"*|"Continue"*)
+            return 0  # Continue
+            ;;
+        "🔄 Retry All Checks")
+            return 1  # Retry
+            ;;
+        "← Back to Main Menu")
+            return 2  # Back
+            ;;
+        "🚪 Exit"|"")
+            echo ""
+            gum style --foreground 212 "Goodbye! 👋"
+            exit 0
+            ;;
+    esac
+}
+
+# ==============================================================================
 # MAIN
 # ==============================================================================
 
 main() {
+    local run_mode
+    run_mode=$(get_mode_string)
+
     show_header
     run_all_checks
     generate_json_report
     show_summary
 
-    # Exit with appropriate code
-    if [ "$FAILED_CHECKS" -gt 0 ]; then
-        exit 1
+    # Branch behavior based on mode
+    if should_run_interactive; then
+        # Interactive mode: show menu with options
+        local menu_result
+        show_interactive_menu "$run_mode"
+        menu_result=$?
+
+        case "$menu_result" in
+            0)  # Continue
+                echo ""
+                gum style --foreground 46 "Proceeding..."
+                if [ "$FAILED_CHECKS" -gt 0 ]; then
+                    exit 1  # Still exit with error code if there were failures
+                else
+                    exit 0
+                fi
+                ;;
+            1)  # Retry
+                echo ""
+                gum style --foreground 117 "Rerunning checks..."
+                sleep 1
+                exec "$0" "$@"  # Re-execute the script
+                ;;
+            2)  # Back to menu
+                echo ""
+                gum style --foreground 240 "Returning to main menu..."
+                exit 0  # Clean exit, let parent handle navigation
+                ;;
+        esac
     else
-        exit 0
+        # Automation/CI mode: exit with appropriate code (original behavior)
+        if [ "$FAILED_CHECKS" -gt 0 ]; then
+            exit 1
+        else
+            exit 0
+        fi
     fi
 }
 

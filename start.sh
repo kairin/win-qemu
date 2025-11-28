@@ -17,6 +17,11 @@
 
 set -euo pipefail
 
+# Ensure proper Unicode/UTF-8 support for gum box drawing
+export LANG="${LANG:-en_US.UTF-8}"
+export LC_ALL="${LC_ALL:-}"
+export CLICOLOR_FORCE=1
+
 # Color codes for consistent styling
 readonly COLOR_PRIMARY=212      # Pink/purple
 readonly COLOR_SUCCESS=46       # Green
@@ -29,6 +34,23 @@ readonly COLOR_MUTED=240        # Gray
 readonly STATE_DIR=".installation-state"
 readonly CONFIG_DIR="configs"
 readonly SCRIPT_DIR="scripts"
+
+# Get terminal width dynamically (with fallback)
+get_term_width() {
+    local width
+    width=$(tput cols 2>/dev/null || echo 80)
+    # Cap at reasonable max, leave 4 chars margin for borders
+    if [ "$width" -gt 80 ]; then
+        echo 76
+    elif [ "$width" -gt 40 ]; then
+        echo $((width - 4))
+    else
+        echo 36
+    fi
+}
+
+# Cache terminal width (recalculate on window resize)
+TERM_WIDTH=$(get_term_width)
 
 # State files
 readonly STATE_FILE="$STATE_DIR/wizard-progress"
@@ -60,13 +82,16 @@ show_header() {
     local subtitle="${2:-}"
 
     clear
+    # Recalculate width in case terminal was resized
+    TERM_WIDTH=$(get_term_width)
+
     gum style \
         --border double \
         --border-foreground "$COLOR_PRIMARY" \
         --padding "1 2" \
         --margin "1 0" \
         --align center \
-        --width 70 \
+        --width "$TERM_WIDTH" \
         "$title"
 
     if [ -n "$subtitle" ]; then
@@ -74,7 +99,7 @@ show_header() {
             --foreground "$COLOR_INFO" \
             --padding "0 2" \
             --align center \
-            --width 70 \
+            --width "$TERM_WIDTH" \
             "$subtitle"
         echo ""
     fi
@@ -110,7 +135,7 @@ show_section() {
         --border rounded \
         --border-foreground "$COLOR_PRIMARY" \
         --padding "1 2" \
-        --width 70 \
+        --width "$TERM_WIDTH" \
         "$1"
     echo ""
 }
@@ -476,6 +501,7 @@ list_vms() {
             --border rounded \
             --border-foreground "$COLOR_INFO" \
             --padding "1 2" \
+            --width "$TERM_WIDTH" \
             "$(virsh list --all)"
     fi
 
@@ -788,10 +814,34 @@ quick_start_wizard() {
         show_section "Step 1/6: Hardware Verification"
         echo ""
 
-        run_hardware_check || {
-            show_error "Hardware check failed. Please resolve issues before continuing."
-            return 1
-        }
+        # Run hardware check with retry loop
+        while true; do
+            if run_hardware_check; then
+                break  # Passed, continue to next step
+            else
+                echo ""
+                show_warning "Hardware check found issues."
+                echo ""
+
+                local choice=$(gum choose \
+                    "🔄 Retry Hardware Check" \
+                    "▶️  Continue Anyway (Not Recommended)" \
+                    "← Back to Main Menu")
+
+                case "$choice" in
+                    "🔄 Retry Hardware Check")
+                        continue
+                        ;;
+                    "▶️  Continue Anyway (Not Recommended)")
+                        show_warning "Continuing despite hardware issues..."
+                        break
+                        ;;
+                    "← Back to Main Menu"|"")
+                        return 1
+                        ;;
+                esac
+            fi
+        done
     fi
 
     # Step 2: Software Installation
@@ -800,15 +850,42 @@ quick_start_wizard() {
 
         show_header "🚀 Quick Start Wizard - Step 2/6" "Software Installation"
 
-        if ! run_software_check; then
-            echo ""
-            if gum confirm "Install QEMU/KVM stack now?"; then
-                install_qemu_stack || return 1
+        # Run software check with retry loop
+        while true; do
+            if run_software_check; then
+                break  # All software installed
             else
-                show_error "Cannot continue without QEMU/KVM installed."
-                return 1
+                echo ""
+                show_warning "Some software components are missing."
+                echo ""
+
+                local choice=$(gum choose \
+                    "🔧 Install QEMU/KVM Stack Now" \
+                    "🔄 Retry Software Check" \
+                    "▶️  Continue Anyway (Not Recommended)" \
+                    "← Back to Main Menu")
+
+                case "$choice" in
+                    "🔧 Install QEMU/KVM Stack Now")
+                        if install_qemu_stack; then
+                            continue  # Re-check after install
+                        else
+                            show_error "Installation failed. Please check errors above."
+                        fi
+                        ;;
+                    "🔄 Retry Software Check")
+                        continue
+                        ;;
+                    "▶️  Continue Anyway (Not Recommended)")
+                        show_warning "Continuing without all software installed..."
+                        break
+                        ;;
+                    "← Back to Main Menu"|"")
+                        return 1
+                        ;;
+                esac
             fi
-        fi
+        done
     fi
 
     # Step 3: User Groups
@@ -817,26 +894,66 @@ quick_start_wizard() {
 
         show_header "🚀 Quick Start Wizard - Step 3/6" "User Configuration"
 
-        if ! check_user_groups; then
-            echo ""
-            if gum confirm "Configure user groups now?"; then
-                configure_user_groups || return 1
+        # Check user groups with retry loop
+        while true; do
+            if check_user_groups; then
+                break  # User groups are configured
+            else
+                echo ""
+                show_warning "User groups need configuration."
+                echo ""
 
-                if [ "$(load_state logout_required)" = "true" ]; then
-                    show_section "⚠️  LOGOUT REQUIRED
+                local choice=$(gum choose \
+                    "🔧 Configure User Groups Now" \
+                    "🔄 Retry Group Check" \
+                    "▶️  Continue Anyway (May Cause Permission Errors)" \
+                    "← Back to Main Menu")
+
+                case "$choice" in
+                    "🔧 Configure User Groups Now")
+                        if configure_user_groups; then
+                            if [ "$(load_state logout_required)" = "true" ]; then
+                                show_section "⚠️  LOGOUT REQUIRED
 
 You must log out and log back in for group changes to take effect.
 
 After logging back in, run this wizard again to continue from Step 4."
 
-                    pause_for_user
-                    return 1
-                fi
-            else
-                show_error "Cannot continue without proper user groups."
-                return 1
+                                local logout_choice=$(gum choose \
+                                    "🚪 Exit Now (Recommended)" \
+                                    "🔄 I've Logged Out - Retry Check" \
+                                    "← Back to Main Menu")
+
+                                case "$logout_choice" in
+                                    "🚪 Exit Now (Recommended)")
+                                        exit 0
+                                        ;;
+                                    "🔄 I've Logged Out - Retry Check")
+                                        save_state "logout_required" "false"
+                                        continue
+                                        ;;
+                                    "← Back to Main Menu"|"")
+                                        return 1
+                                        ;;
+                                esac
+                            fi
+                        else
+                            show_error "Group configuration failed."
+                        fi
+                        ;;
+                    "🔄 Retry Group Check")
+                        continue
+                        ;;
+                    "▶️  Continue Anyway (May Cause Permission Errors)")
+                        show_warning "Continuing without proper groups..."
+                        break
+                        ;;
+                    "← Back to Main Menu"|"")
+                        return 1
+                        ;;
+                esac
             fi
-        fi
+        done
     fi
 
     # Step 4: Download ISOs
@@ -845,7 +962,9 @@ After logging back in, run this wizard again to continue from Step 4."
 
         show_header "🚀 Quick Start Wizard - Step 4/6" "Download Installation Media"
 
-        show_section "You need two ISO files:
+        # ISO download step with retry loop
+        while true; do
+            show_section "You need two ISO files:
 
 1. Windows 11 ISO
    Download: https://www.microsoft.com/software-download/windows11
@@ -855,10 +974,39 @@ After logging back in, run this wizard again to continue from Step 4."
 
 Download these files now, then return here to continue."
 
-        if ! gum confirm "Have you downloaded both ISO files?"; then
-            show_info "Download the ISOs and run the wizard again."
-            return 1
-        fi
+            local choice=$(gum choose \
+                "✅ I Have Both ISOs - Continue" \
+                "📥 Open Download URLs in Browser" \
+                "⏭️  Skip for Now (Configure Later)" \
+                "← Back to Main Menu")
+
+            case "$choice" in
+                "✅ I Have Both ISOs - Continue")
+                    break
+                    ;;
+                "📥 Open Download URLs in Browser")
+                    if command -v xdg-open &> /dev/null; then
+                        xdg-open "https://www.microsoft.com/software-download/windows11" &
+                        sleep 1
+                        xdg-open "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/" &
+                        show_info "Opened download URLs in your browser."
+                    else
+                        show_warning "Cannot open browser. Please open URLs manually."
+                    fi
+                    echo ""
+                    gum style --foreground 240 "Press any key when downloads are complete..."
+                    read -n 1 -s -r
+                    continue
+                    ;;
+                "⏭️  Skip for Now (Configure Later)")
+                    show_warning "Skipping ISO verification. You'll need to provide paths during VM creation."
+                    break
+                    ;;
+                "← Back to Main Menu"|"")
+                    return 1
+                    ;;
+            esac
+        done
     fi
 
     # Step 5: Create VM
@@ -1194,7 +1342,7 @@ show_main_menu() {
             --border rounded \
             --border-foreground "$COLOR_MUTED" \
             --padding "1 2" \
-            --width 70 \
+            --width "$TERM_WIDTH" \
             "System Status:
   Hardware Check: $([ "$hw_status" = "passed" ] && echo "✅ Passed" || echo "❓ Not checked")
   Software: $([ "$sw_status" = "complete" ] && echo "✅ Installed" || echo "❓ Not checked")
@@ -1540,36 +1688,159 @@ show_diagnostics_menu() {
         show_breadcrumb "Main Menu > Diagnostics"
 
         local choice=$(gum choose \
-            "Run Full System Check" \
-            "Check Hardware Status" \
-            "Check Software Status" \
+            "Run Full System Check (42+ Checks)" \
+            "Run Quick Hardware Check" \
+            "Run Quick Software Check" \
             "Check VM Status" \
+            "View Latest Report" \
             "← Back to Main Menu")
 
         case "$choice" in
-            "Run Full System Check")
-                run_hardware_check
-                echo ""
-                run_software_check
-                wait_and_return "Diagnostics Menu"
+            "Run Full System Check (42+ Checks)")
+                # Run the comprehensive system readiness check with retry loop
+                run_full_system_check_with_retry
                 ;;
-            "Check Hardware Status")
-                run_hardware_check
-                wait_and_return "Diagnostics Menu"
+            "Run Quick Hardware Check")
+                # Run quick hardware check with retry option
+                run_hardware_check_with_retry
                 ;;
-            "Check Software Status")
-                run_software_check
-                wait_and_return "Diagnostics Menu"
+            "Run Quick Software Check")
+                # Run quick software check with retry option
+                run_software_check_with_retry
                 ;;
             "Check VM Status")
                 list_vms
                 # list_vms has its own wait_and_return, so just continue loop
+                ;;
+            "View Latest Report")
+                view_latest_report
                 ;;
             "← Back to Main Menu"|"")
                 break
                 ;;
         esac
     done
+}
+
+# Run full system check with retry loop
+run_full_system_check_with_retry() {
+    while true; do
+        show_header "🔍 Full System Readiness Check" "Running 42+ prerequisite checks..."
+        show_breadcrumb "Main Menu > Diagnostics > Full System Check"
+
+        # Run the comprehensive check script
+        local check_result=0
+        if [ -f "$SCRIPT_DIR/system-readiness-check.sh" ]; then
+            # Run with --interactive flag to ensure menu shows
+            "$SCRIPT_DIR/system-readiness-check.sh" --interactive || check_result=$?
+        else
+            show_error "system-readiness-check.sh not found!"
+            wait_and_return "Diagnostics Menu"
+            return
+        fi
+
+        # The script handles its own menu now, so we just need to handle the return
+        # If the script exits cleanly (0), return to this menu
+        # The script's internal menu handles retry, continue, exit, etc.
+        break
+    done
+}
+
+# Run hardware check with retry option
+run_hardware_check_with_retry() {
+    while true; do
+        run_hardware_check
+        local hw_result=$?
+
+        echo ""
+
+        # Show retry menu
+        local choice=$(gum choose \
+            "🔄 Retry Hardware Check" \
+            "▶️  Continue" \
+            "← Back to Diagnostics Menu")
+
+        case "$choice" in
+            "🔄 Retry Hardware Check")
+                continue  # Loop again
+                ;;
+            "▶️  Continue"|"← Back to Diagnostics Menu"|"")
+                break
+                ;;
+        esac
+    done
+}
+
+# Run software check with retry option
+run_software_check_with_retry() {
+    while true; do
+        local needs_install=false
+
+        if ! run_software_check; then
+            needs_install=true
+        fi
+
+        echo ""
+
+        # Build options based on result
+        local options=()
+
+        if $needs_install; then
+            options+=("🔧 Install Missing Components")
+        fi
+
+        options+=("🔄 Retry Software Check")
+        options+=("← Back to Diagnostics Menu")
+
+        local choice=$(printf '%s\n' "${options[@]}" | gum choose)
+
+        case "$choice" in
+            "🔧 Install Missing Components")
+                install_qemu_stack
+                continue  # Re-check after install
+                ;;
+            "🔄 Retry Software Check")
+                continue
+                ;;
+            "← Back to Diagnostics Menu"|"")
+                break
+                ;;
+        esac
+    done
+}
+
+# View the latest readiness check report
+view_latest_report() {
+    show_header "📄 Latest Readiness Report"
+    show_breadcrumb "Main Menu > Diagnostics > View Report"
+
+    local report_dir="$STATE_DIR"
+
+    # Alternative location
+    if [ ! -d "$report_dir" ] || [ -z "$(ls -A "$report_dir" 2>/dev/null)" ]; then
+        report_dir=".installation-state"
+    fi
+
+    # Find the latest report
+    local latest_report=$(find "$report_dir" -name "readiness-check-*.json" 2>/dev/null | sort -r | head -n1)
+
+    if [ -n "$latest_report" ] && [ -f "$latest_report" ]; then
+        show_info "Report: $latest_report"
+        echo ""
+
+        if command -v jq &> /dev/null; then
+            # Pretty print JSON
+            jq '.' "$latest_report" | gum pager
+        else
+            gum pager < "$latest_report"
+        fi
+    else
+        show_warning "No readiness check reports found."
+        echo ""
+        show_info "Run 'Full System Check' to generate a report."
+    fi
+
+    wait_and_return "Diagnostics Menu"
 }
 
 show_settings_menu() {
