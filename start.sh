@@ -30,10 +30,11 @@ readonly COLOR_ERROR=196        # Red
 readonly COLOR_INFO=57          # Blue
 readonly COLOR_MUTED=240        # Gray
 
-# Directories
-readonly STATE_DIR=".installation-state"
-readonly CONFIG_DIR="configs"
-readonly SCRIPT_DIR="scripts"
+# Directories - use absolute paths based on script location
+readonly PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly STATE_DIR="$PROJECT_ROOT/.installation-state"
+readonly CONFIG_DIR="$PROJECT_ROOT/configs"
+readonly SCRIPT_DIR="$PROJECT_ROOT/scripts"
 
 # Get terminal width dynamically (with fallback)
 get_term_width() {
@@ -64,11 +65,45 @@ readonly VM_STATE="$STATE_DIR/vm-info"
 
 ensure_gum() {
     if ! command -v gum &> /dev/null; then
-        echo "ERROR: gum is not installed!"
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║  gum is not installed (required for TUI interface)           ║"
+        echo "╠══════════════════════════════════════════════════════════════╣"
+        echo "║  Installation options:                                       ║"
+        echo "║    1. sudo apt install gum          (Ubuntu 23.04+)          ║"
+        echo "║    2. brew install gum              (if Homebrew installed)  ║"
+        echo "║    3. go install github.com/charmbracelet/gum@latest         ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
         echo ""
-        echo "Install with:"
-        echo "  Ubuntu/Debian: sudo apt install gum"
-        echo "  Or: go install github.com/charmbracelet/gum@latest"
+
+        # Check if apt has gum available
+        if apt-cache show gum &>/dev/null 2>&1; then
+            read -p "gum is available via apt. Install now? [Y/n] " choice
+            choice="${choice:-Y}"
+            if [[ "$choice" =~ ^[Yy]$ ]]; then
+                echo "Installing gum via apt..."
+                sudo apt install -y gum
+                if command -v gum &> /dev/null; then
+                    echo "✓ gum installed successfully!"
+                    return 0
+                fi
+            fi
+        elif command -v go &> /dev/null; then
+            read -p "Go is installed. Install gum via 'go install'? [Y/n] " choice
+            choice="${choice:-Y}"
+            if [[ "$choice" =~ ^[Yy]$ ]]; then
+                echo "Installing gum via go..."
+                go install github.com/charmbracelet/gum@latest
+                # Add Go bin to PATH for this session
+                export PATH="$PATH:$(go env GOPATH)/bin"
+                if command -v gum &> /dev/null; then
+                    echo "✓ gum installed successfully!"
+                    echo "Note: Add $(go env GOPATH)/bin to your PATH permanently"
+                    return 0
+                fi
+            fi
+        fi
+
+        echo "Please install gum manually and re-run this script."
         exit 1
     fi
 }
@@ -507,6 +542,31 @@ list_vms() {
 
     echo ""
     wait_and_return "VM Operations Menu"
+}
+
+# Helper function to select a VM for an operation
+select_vm_for_operation() {
+    local operation="${1:-manage}"
+
+    if ! command -v virsh &> /dev/null; then
+        show_error "libvirt not installed!"
+        return 1
+    fi
+
+    local vms=$(virsh -c qemu:///system list --all --name 2>/dev/null | grep -v '^$')
+
+    if [ -z "$vms" ]; then
+        show_error "No VMs found. Create one first."
+        return 1
+    fi
+
+    local vm_name=$(echo "$vms" | gum choose --header "Select VM to $operation:")
+
+    if [ -z "$vm_name" ]; then
+        return 1
+    fi
+
+    echo "$vm_name"
 }
 
 create_vm_wizard() {
@@ -1539,29 +1599,74 @@ show_performance_menu() {
 
         local choice=$(gum choose \
             "View Performance Guide" \
-            "CPU Pinning (coming soon)" \
-            "Huge Pages (coming soon)" \
-            "Hyper-V Enlightenments (coming soon)" \
-            "VirtIO Tuning (coming soon)" \
+            "Apply All Optimizations" \
+            "CPU Pinning" \
+            "Huge Pages" \
+            "Hyper-V Enlightenments" \
+            "VirtIO Tuning" \
             "← Back to Main Menu")
 
         case "$choice" in
             "View Performance Guide")
-                show_section "Performance optimization features coming soon!
+                show_section "Performance Optimization Guide
 
-For now, please refer to:
-• outlook-linux-guide/09-performance-optimization-playbook.md
-• Use the guardian-performance agent from Claude Code
+Available optimizations:
+• Hyper-V enlightenments (14 features) - 10-15% improvement
+• CPU pinning - 3-5% improvement
+• Huge pages - 5-10% improvement
+• VirtIO driver tuning - I/O optimization
 
-Key optimizations:
-- Hyper-V enlightenments (14 features)
-- CPU pinning
-- Huge pages
-- VirtIO driver tuning"
+Target: 85-95% native Windows performance
+
+Script: $SCRIPT_DIR/configure-performance.sh"
                 wait_and_return "Performance Menu"
                 ;;
-            "CPU Pinning (coming soon)"|"Huge Pages (coming soon)"|"Hyper-V Enlightenments (coming soon)"|"VirtIO Tuning (coming soon)")
-                show_info "This feature is coming soon!"
+            "Apply All Optimizations")
+                local vm_name=$(select_vm_for_operation "optimize")
+                if [[ -n "$vm_name" ]]; then
+                    show_header "Applying all optimizations to '$vm_name'..."
+                    if [ -f "$SCRIPT_DIR/configure-performance.sh" ]; then
+                        "$SCRIPT_DIR/configure-performance.sh" --vm "$vm_name" --all --yes || true
+                    else
+                        show_error "configure-performance.sh not found"
+                    fi
+                fi
+                wait_and_return "Performance Menu"
+                ;;
+            "CPU Pinning")
+                local vm_name=$(select_vm_for_operation "configure CPU pinning for")
+                if [[ -n "$vm_name" ]]; then
+                    if [ -f "$SCRIPT_DIR/configure-performance.sh" ]; then
+                        "$SCRIPT_DIR/configure-performance.sh" --vm "$vm_name" --cpu-pinning || true
+                    fi
+                fi
+                wait_and_return "Performance Menu"
+                ;;
+            "Huge Pages")
+                local vm_name=$(select_vm_for_operation "configure huge pages for")
+                if [[ -n "$vm_name" ]]; then
+                    if [ -f "$SCRIPT_DIR/configure-performance.sh" ]; then
+                        "$SCRIPT_DIR/configure-performance.sh" --vm "$vm_name" --huge-pages || true
+                    fi
+                fi
+                wait_and_return "Performance Menu"
+                ;;
+            "Hyper-V Enlightenments")
+                local vm_name=$(select_vm_for_operation "configure Hyper-V for")
+                if [[ -n "$vm_name" ]]; then
+                    if [ -f "$SCRIPT_DIR/configure-performance.sh" ]; then
+                        "$SCRIPT_DIR/configure-performance.sh" --vm "$vm_name" --hyperv || true
+                    fi
+                fi
+                wait_and_return "Performance Menu"
+                ;;
+            "VirtIO Tuning")
+                local vm_name=$(select_vm_for_operation "tune VirtIO for")
+                if [[ -n "$vm_name" ]]; then
+                    if [ -f "$SCRIPT_DIR/configure-performance.sh" ]; then
+                        "$SCRIPT_DIR/configure-performance.sh" --vm "$vm_name" --virtio || true
+                    fi
+                fi
                 wait_and_return "Performance Menu"
                 ;;
             "← Back to Main Menu"|"")
@@ -1577,30 +1682,70 @@ show_security_menu() {
         show_breadcrumb "Main Menu > Security"
 
         local choice=$(gum choose \
+            "Run Security Audit" \
+            "Apply All Security Hardening" \
+            "Configure Host Firewall" \
+            "Enforce virtio-fs Read-Only" \
+            "Configure AppArmor" \
             "View Security Guide" \
-            "Host Firewall (coming soon)" \
-            "virtio-fs Read-Only Mode (coming soon)" \
-            "BitLocker Setup (coming soon)" \
-            "AppArmor/SELinux Profiles (coming soon)" \
             "← Back to Main Menu")
 
         case "$choice" in
-            "View Security Guide")
-                show_section "Security hardening features coming soon!
-
-For now, please refer to:
-• research/06-security-hardening-analysis.md
-• Use the guardian-security agent from Claude Code
-
-Key security measures:
-- Host firewall (M365 whitelist)
-- virtio-fs read-only mode
-- BitLocker in guest
-- AppArmor/SELinux profiles"
+            "Run Security Audit")
+                show_header "Running Security Audit..."
+                if [ -f "$SCRIPT_DIR/configure-security.sh" ]; then
+                    "$SCRIPT_DIR/configure-security.sh" --audit || true
+                else
+                    show_error "configure-security.sh not found"
+                fi
                 wait_and_return "Security Menu"
                 ;;
-            "Host Firewall (coming soon)"|"virtio-fs Read-Only Mode (coming soon)"|"BitLocker Setup (coming soon)"|"AppArmor/SELinux Profiles (coming soon)")
-                show_info "This feature is coming soon!"
+            "Apply All Security Hardening")
+                local vm_name=$(select_vm_for_operation "harden")
+                if [[ -n "$vm_name" ]]; then
+                    show_header "Applying security hardening to '$vm_name'..."
+                    if [ -f "$SCRIPT_DIR/configure-security.sh" ]; then
+                        sudo "$SCRIPT_DIR/configure-security.sh" --vm "$vm_name" --all || true
+                    fi
+                fi
+                wait_and_return "Security Menu"
+                ;;
+            "Configure Host Firewall")
+                show_header "Configuring UFW Firewall..."
+                if [ -f "$SCRIPT_DIR/configure-security.sh" ]; then
+                    sudo "$SCRIPT_DIR/configure-security.sh" --firewall || true
+                fi
+                wait_and_return "Security Menu"
+                ;;
+            "Enforce virtio-fs Read-Only")
+                local vm_name=$(select_vm_for_operation "enforce read-only for")
+                if [[ -n "$vm_name" ]]; then
+                    if [ -f "$SCRIPT_DIR/configure-security.sh" ]; then
+                        "$SCRIPT_DIR/configure-security.sh" --vm "$vm_name" --virtiofs-ro || true
+                    fi
+                fi
+                wait_and_return "Security Menu"
+                ;;
+            "Configure AppArmor")
+                show_header "Configuring AppArmor..."
+                if [ -f "$SCRIPT_DIR/configure-security.sh" ]; then
+                    sudo "$SCRIPT_DIR/configure-security.sh" --apparmor || true
+                fi
+                wait_and_return "Security Menu"
+                ;;
+            "View Security Guide")
+                show_section "Security Hardening Guide
+
+Available features:
+• UFW Firewall - Block unnecessary network access
+• virtio-fs Read-Only - Mandatory protection against ransomware
+• AppArmor - Confine QEMU processes
+
+Key security principle:
+  Host filesystem sharing MUST be read-only!
+  This protects against ransomware encrypting host files.
+
+Script: $SCRIPT_DIR/configure-security.sh"
                 wait_and_return "Security Menu"
                 ;;
             "← Back to Main Menu"|"")
@@ -1616,29 +1761,59 @@ show_filesharing_menu() {
         show_breadcrumb "Main Menu > File Sharing"
 
         local choice=$(gum choose \
+            "Setup virtio-fs Share" \
+            "Test virtio-fs Connection" \
             "View File Sharing Guide" \
-            "Setup virtio-fs Share (coming soon)" \
-            "Test virtio-fs Connection (coming soon)" \
-            "Configure Read-Only Mode (coming soon)" \
-            "Mount PST Files (coming soon)" \
             "← Back to Main Menu")
 
         case "$choice" in
-            "View File Sharing Guide")
-                show_section "File sharing features coming soon!
+            "Setup virtio-fs Share")
+                local vm_name=$(select_vm_for_operation "configure virtio-fs for")
+                if [[ -n "$vm_name" ]]; then
+                    show_header "Setting up virtio-fs for '$vm_name'..."
 
-For now, please refer to:
-• Use the guardian-virtiofs agent from Claude Code
+                    # Ask for source directory
+                    local source_dir=$(gum input --placeholder "/home/$USER/shared-folder" --prompt "Source directory on host: ")
+                    if [[ -z "$source_dir" ]]; then
+                        source_dir="/home/$USER/shared-folder"
+                    fi
 
-virtio-fs provides:
-- High-performance file sharing
-- Direct host → guest access
-- Read-only mode for security
-- Ideal for PST file access"
+                    if [ -f "$SCRIPT_DIR/setup-virtio-fs.sh" ]; then
+                        "$SCRIPT_DIR/setup-virtio-fs.sh" --vm "$vm_name" --source "$source_dir" || true
+                    else
+                        show_error "setup-virtio-fs.sh not found"
+                    fi
+                fi
                 wait_and_return "File Sharing Menu"
                 ;;
-            "Setup virtio-fs Share (coming soon)"|"Test virtio-fs Connection (coming soon)"|"Configure Read-Only Mode (coming soon)"|"Mount PST Files (coming soon)")
-                show_info "This feature is coming soon!"
+            "Test virtio-fs Connection")
+                local vm_name=$(select_vm_for_operation "test virtio-fs for")
+                if [[ -n "$vm_name" ]]; then
+                    if [ -f "$SCRIPT_DIR/test-virtio-fs.sh" ]; then
+                        "$SCRIPT_DIR/test-virtio-fs.sh" --vm "$vm_name" --verbose || true
+                    else
+                        show_error "test-virtio-fs.sh not found"
+                    fi
+                fi
+                wait_and_return "File Sharing Menu"
+                ;;
+            "View File Sharing Guide")
+                show_section "virtio-fs File Sharing Guide
+
+virtio-fs provides high-performance filesystem sharing between host and guest.
+
+IMPORTANT: Read-only mode is MANDATORY for security!
+This protects against ransomware encrypting host files.
+
+Setup steps:
+1. Configure share with setup-virtio-fs.sh
+2. Install WinFsp in Windows guest
+3. Mount share as drive letter (e.g., Z:)
+4. Access host files from Windows
+
+Scripts:
+• $SCRIPT_DIR/setup-virtio-fs.sh
+• $SCRIPT_DIR/test-virtio-fs.sh"
                 wait_and_return "File Sharing Menu"
                 ;;
             "← Back to Main Menu"|"")
@@ -1654,25 +1829,91 @@ show_backup_menu() {
         show_breadcrumb "Main Menu > Backup"
 
         local choice=$(gum choose \
+            "Create Backup (Live)" \
+            "Create Backup (Offline)" \
+            "Create Snapshot Only" \
+            "List Snapshots" \
+            "Restore Snapshot" \
             "View Backup Guide" \
-            "Create Snapshot (coming soon)" \
-            "List Snapshots (coming soon)" \
-            "Restore Snapshot (coming soon)" \
-            "Export VM (coming soon)" \
             "← Back to Main Menu")
 
         case "$choice" in
-            "View Backup Guide")
-                show_section "Backup features coming soon!
-
-Basic backup commands:
-• Create snapshot: virsh snapshot-create-as <vm-name> <snapshot-name>
-• List snapshots: virsh snapshot-list <vm-name>
-• Restore snapshot: virsh snapshot-revert <vm-name> <snapshot-name>"
+            "Create Backup (Live)")
+                local vm_name=$(select_vm_for_operation "backup")
+                if [[ -n "$vm_name" ]]; then
+                    show_header "Creating live backup of '$vm_name'..."
+                    if [ -f "$SCRIPT_DIR/backup-vm.sh" ]; then
+                        "$SCRIPT_DIR/backup-vm.sh" --vm "$vm_name" --live --yes || true
+                    else
+                        show_error "backup-vm.sh not found"
+                    fi
+                fi
                 wait_and_return "Backup Menu"
                 ;;
-            "Create Snapshot (coming soon)"|"List Snapshots (coming soon)"|"Restore Snapshot (coming soon)"|"Export VM (coming soon)")
-                show_info "This feature is coming soon!"
+            "Create Backup (Offline)")
+                local vm_name=$(select_vm_for_operation "backup")
+                if [[ -n "$vm_name" ]]; then
+                    show_header "Creating offline backup of '$vm_name'..."
+                    if [ -f "$SCRIPT_DIR/backup-vm.sh" ]; then
+                        "$SCRIPT_DIR/backup-vm.sh" --vm "$vm_name" --offline --yes || true
+                    fi
+                fi
+                wait_and_return "Backup Menu"
+                ;;
+            "Create Snapshot Only")
+                local vm_name=$(select_vm_for_operation "snapshot")
+                if [[ -n "$vm_name" ]]; then
+                    local snap_name=$(gum input --placeholder "snapshot-$(date +%Y%m%d)" --prompt "Snapshot name: ")
+                    if [[ -z "$snap_name" ]]; then
+                        snap_name="snapshot-$(date +%Y%m%d-%H%M%S)"
+                    fi
+                    show_header "Creating snapshot '$snap_name' for '$vm_name'..."
+                    virsh -c qemu:///system snapshot-create-as "$vm_name" "$snap_name" --description "Created via start.sh" || true
+                fi
+                wait_and_return "Backup Menu"
+                ;;
+            "List Snapshots")
+                local vm_name=$(select_vm_for_operation "list snapshots for")
+                if [[ -n "$vm_name" ]]; then
+                    show_header "Snapshots for '$vm_name'"
+                    virsh -c qemu:///system snapshot-list "$vm_name" || true
+                fi
+                wait_and_return "Backup Menu"
+                ;;
+            "Restore Snapshot")
+                local vm_name=$(select_vm_for_operation "restore snapshot for")
+                if [[ -n "$vm_name" ]]; then
+                    # Get list of snapshots
+                    local snapshots=$(virsh -c qemu:///system snapshot-list "$vm_name" --name 2>/dev/null)
+                    if [[ -z "$snapshots" ]]; then
+                        show_error "No snapshots found for '$vm_name'"
+                    else
+                        local snap_name=$(echo "$snapshots" | gum choose --header "Select snapshot to restore:")
+                        if [[ -n "$snap_name" ]]; then
+                            if gum confirm "Restore '$vm_name' to snapshot '$snap_name'?"; then
+                                show_header "Restoring snapshot..."
+                                virsh -c qemu:///system snapshot-revert "$vm_name" "$snap_name" || true
+                            fi
+                        fi
+                    fi
+                fi
+                wait_and_return "Backup Menu"
+                ;;
+            "View Backup Guide")
+                show_section "Backup & Recovery Guide
+
+Backup Types:
+• Live Backup - Backup while VM is running
+• Offline Backup - Stop VM, backup, restart
+• Snapshot - Point-in-time state capture
+
+Backup script: $SCRIPT_DIR/backup-vm.sh
+
+Manual commands:
+• Create snapshot: virsh snapshot-create-as <vm> <name>
+• List snapshots: virsh snapshot-list <vm>
+• Restore: virsh snapshot-revert <vm> <name>
+• Delete: virsh snapshot-delete <vm> <name>"
                 wait_and_return "Backup Menu"
                 ;;
             "← Back to Main Menu"|"")

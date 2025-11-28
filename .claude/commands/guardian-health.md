@@ -16,13 +16,19 @@ $ARGUMENTS
 
 ## Automatic Workflow
 
-You **MUST** invoke the **master-orchestrator** agent to coordinate the health check workflow.
+You **MUST** invoke the **001-orchestrator** agent to coordinate the health check workflow.
 
-Pass the following instructions to master-orchestrator:
+Pass the following instructions to 001-orchestrator:
 
-### Phase 1: System Readiness Validation (Single Agent)
+### Phase 1: System Readiness Validation (Delegated to 007-health)
 
-**Agent**: **qemu-health-checker**
+**Agent**: **007-health** → delegates to Haiku agents:
+- **071-hardware-check**: CPU, RAM, storage validation
+- **072-qemu-stack-check**: QEMU/KVM/libvirt installation
+- **073-virtio-check**: VirtIO drivers ISO
+- **074-network-check**: libvirt network configuration
+- **075-report-generator**: JSON health report
+- **076-setup-guide-generator**: Device-specific setup guide
 
 **Tasks**:
 1. **Category 1: Hardware Prerequisites** (8 CRITICAL checks):
@@ -109,7 +115,7 @@ Pass the following instructions to master-orchestrator:
 
 ### Phase 2: Standards Compliance Validation (Conditional - If Status = READY)
 
-**Agent**: **project-health-auditor**
+**Agent**: **007-health** (with Context7 integration)
 
 **Tasks** (only if readiness check passed):
 1. Query Context7 for QEMU/KVM latest best practices
@@ -122,7 +128,7 @@ Pass the following instructions to master-orchestrator:
 
 ### Phase 3: Setup Guide Generation (Conditional - If Status = NEEDS_SETUP)
 
-**Agent**: **qemu-health-checker**
+**Agent**: **076-setup-guide-generator** (delegated from 007-health)
 
 **Tasks** (only if components missing):
 1. Identify all missing prerequisites
@@ -173,7 +179,7 @@ exit 0
 
 ### Phase 4: Critical Failure Handling (Conditional - If Status = CRITICAL_ISSUES)
 
-**Agent**: **qemu-health-checker**
+**Agent**: **007-health** → **076-setup-guide-generator**
 
 **Tasks** (only if critical failures detected):
 1. Identify blocking issues

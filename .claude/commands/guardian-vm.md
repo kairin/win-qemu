@@ -24,13 +24,13 @@ $ARGUMENTS
 
 ## Automatic Workflow
 
-You **MUST** invoke the **master-orchestrator** agent to coordinate the complete VM creation workflow.
+You **MUST** invoke the **001-orchestrator** agent to coordinate the complete VM creation workflow.
 
-Pass the following instructions to master-orchestrator:
+Pass the following instructions to 001-orchestrator:
 
-### Phase 1: Prerequisites Validation (Single Agent)
+### Phase 1: Prerequisites Validation (Delegated to 007-health)
 
-**Agent**: **qemu-health-checker**
+**Agent**: **007-health** → delegates to 07X Haiku agents
 
 **Tasks**:
 1. Run all 42 health checks
@@ -60,9 +60,14 @@ IF status == "READY":
   PROCEED to Phase 2
 ```
 
-### Phase 2: VM Creation (Single Agent)
+### Phase 2: VM Creation (Delegated to 002-vm-operations)
 
-**Agent**: **vm-operations-specialist**
+**Agent**: **002-vm-operations** → delegates to:
+- **021-vm-create**: Create VM with Q35, UEFI, TPM 2.0
+- **022-vm-start**: Start VM after creation
+- **023-vm-stop**: Stop VM when needed
+- **024-vm-backup**: Snapshot creation
+- **025-vm-restore**: Snapshot restoration
 
 **Tasks**:
 1. Parse user arguments (or use defaults)
@@ -129,9 +134,14 @@ virt-install \
 - Disk image: /var/lib/libvirt/images/{{ VM_NAME }}.qcow2
 - VM state: Shut off (ready for manual Windows installation)
 
-### Phase 3: Performance Optimization (Single Agent)
+### Phase 3: Performance Optimization (Delegated to 003-performance)
 
-**Agent**: **performance-optimization-specialist**
+**Agent**: **003-performance** → delegates to:
+- **031-hyperv-enlightenments**: Apply 14 Hyper-V features
+- **032-virtio-tune**: VirtIO driver optimization
+- **033-cpu-pinning**: CPU topology configuration
+- **034-huge-pages**: Memory huge pages setup
+- **035-benchmark**: Performance validation
 
 **Tasks**:
 1. Apply ALL 14 Hyper-V enlightenments
@@ -174,9 +184,15 @@ virt-install \
 - Outlook startup: < 5 seconds
 - Overall: 85-95% of native Windows performance
 
-### Phase 4: Security Hardening (Single Agent)
+### Phase 4: Security Hardening (Delegated to 004-security)
 
-**Agent**: **security-hardening-specialist**
+**Agent**: **004-security** → delegates to:
+- **041-host-security**: LUKS, .gitignore, AppArmor
+- **042-vm-security**: UEFI, TPM, memory locking
+- **043-network-security**: NAT mode, firewall
+- **044-virtiofs-readonly**: Ransomware protection
+- **045-guest-hardening**: BitLocker, Windows Defender
+- **046-security-audit**: 60+ checklist validation
 
 **Tasks**:
 1. Verify QEMU process isolation
@@ -202,9 +218,9 @@ virt-install \
 - No critical security issues
 - Recommendations for improvements
 
-### Phase 5: VM Boot Test (Single Agent)
+### Phase 5: VM Boot Test (Delegated to 002-vm-operations)
 
-**Agent**: **vm-operations-specialist**
+**Agent**: **022-vm-start** (delegated from 002-vm-operations)
 
 **Tasks**:
 1. Start VM
@@ -239,9 +255,9 @@ virsh domdisplay {{ VM_NAME }}
 - Display available: spice://127.0.0.1:XXXXX
 - Ready for Windows installation
 
-### Phase 6: Standards Validation (Single Agent)
+### Phase 6: Standards Validation (Delegated to 007-health)
 
-**Agent**: **project-health-auditor**
+**Agent**: **007-health** (with Context7 integration)
 
 **Tasks**:
 1. Query Context7 for QEMU/KVM latest best practices
@@ -259,9 +275,12 @@ virsh domdisplay {{ VM_NAME }}
 - All recommended optimizations applied
 - Priority recommendations (if any)
 
-### Phase 7: Constitutional Commit (Single Agent)
+### Phase 7: Constitutional Commit (Delegated to 009-git)
 
-**Agent**: **git-operations-specialist**
+**Agent**: **009-git** → delegates to:
+- **091-branch-create**: Timestamped branch
+- **092-commit-format**: Constitutional commit message
+- **093-merge-strategy**: --no-ff merge to main
 
 **Tasks**:
 1. Save VM XML configuration to configs/

@@ -24,13 +24,15 @@ $ARGUMENTS
 
 ## Automatic Workflow
 
-You **MUST** invoke the **master-orchestrator** agent to coordinate the performance optimization workflow.
+You **MUST** invoke the **001-orchestrator** agent to coordinate the performance optimization workflow.
 
-Pass the following instructions to master-orchestrator:
+Pass the following instructions to 001-orchestrator:
 
-### Phase 1: Prerequisites & Baseline (Single Agent)
+### Phase 1: Prerequisites & Baseline (Delegated to 007-health)
 
-**Agent**: **qemu-health-checker**
+**Agent**: **007-health** → delegates to:
+- **071-hardware-check**: CPU core count, storage type
+- **035-benchmark**: Establish baseline metrics
 
 **Tasks**:
 1. Verify VM exists and is accessible
@@ -66,9 +68,9 @@ IF CPU < 4 cores:
   WARN: "CPU pinning not recommended (insufficient cores)"
 ```
 
-### Phase 2: Hyper-V Enlightenments (Single Agent)
+### Phase 2: Hyper-V Enlightenments (Delegated to 003-performance)
 
-**Agent**: **performance-optimization-specialist**
+**Agent**: **003-performance** → **031-hyperv-enlightenments**
 
 **Tasks**:
 1. Apply ALL 14 Hyper-V enlightenments
@@ -131,9 +133,9 @@ IF CPU < 4 cores:
 - CPU performance improvement: 10-20%
 - Overall responsiveness: 20-40% better
 
-### Phase 3: VirtIO Optimization (Single Agent)
+### Phase 3: VirtIO Optimization (Delegated to 003-performance)
 
-**Agent**: **performance-optimization-specialist**
+**Agent**: **003-performance** → **032-virtio-tune**
 
 **Tasks**:
 1. Verify all devices use VirtIO
@@ -183,7 +185,7 @@ IF CPU < 4 cores:
 
 ### Phase 4: CPU Pinning (Conditional - If 8+ cores)
 
-**Agent**: **performance-optimization-specialist**
+**Agent**: **003-performance** → **033-cpu-pinning**
 
 **Tasks**:
 1. Detect host CPU topology
@@ -225,7 +227,7 @@ IF CPU < 4 cores:
 
 ### Phase 5: Huge Pages (Conditional - If available)
 
-**Agent**: **performance-optimization-specialist**
+**Agent**: **003-performance** → **034-huge-pages**
 
 **Tasks**:
 1. Check huge pages availability on host
@@ -262,7 +264,7 @@ grep HugePages /proc/meminfo
 
 ### Phase 6: Benchmarking (Conditional - Unless --skip-benchmark)
 
-**Agent**: **performance-optimization-specialist**
+**Agent**: **003-performance** → **035-benchmark**
 
 **Tasks**:
 1. Restart VM to apply optimizations
@@ -300,9 +302,9 @@ Outlook Startup:  12s → 4s (67% faster)
 Overall:          50-60% → 85-95% native performance
 ```
 
-### Phase 7: Context7 Standards Validation (Single Agent)
+### Phase 7: Context7 Standards Validation (Delegated to 007-health)
 
-**Agent**: **project-health-auditor**
+**Agent**: **007-health** (with Context7 integration)
 
 **Tasks**:
 1. Query Context7 for QEMU/KVM performance best practices
@@ -322,9 +324,12 @@ Overall:          50-60% → 85-95% native performance
 - Huge pages: ✅ or ⚠️ (optional)
 - Additional recommendations from Context7
 
-### Phase 8: Constitutional Commit (Single Agent)
+### Phase 8: Constitutional Commit (Delegated to 009-git)
 
-**Agent**: **git-operations-specialist**
+**Agent**: **009-git** → delegates to:
+- **091-branch-create**: Create perf-vm-optimization branch
+- **092-commit-format**: Constitutional commit message
+- **093-merge-strategy**: Merge to main with --no-ff
 
 **Tasks**:
 1. Export optimized VM XML

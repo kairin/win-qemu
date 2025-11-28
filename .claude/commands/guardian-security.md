@@ -24,13 +24,13 @@ $ARGUMENTS
 
 ## Automatic Workflow
 
-You **MUST** invoke the **master-orchestrator** agent to coordinate the security hardening workflow.
+You **MUST** invoke the **001-orchestrator** agent to coordinate the security hardening workflow.
 
-Pass the following instructions to master-orchestrator:
+Pass the following instructions to 001-orchestrator:
 
-### Phase 1: Security Audit (Single Agent)
+### Phase 1: Security Audit (Delegated to 004-security)
 
-**Agent**: **security-hardening-specialist**
+**Agent**: **004-security** → **046-security-audit**
 
 **Tasks**:
 1. Run comprehensive 60+ item security checklist
@@ -131,9 +131,9 @@ LOW PRIORITY (Nice-to-have):
 ═══════════════════════════════════════════════════════════════════════
 ```
 
-### Phase 2: Host-Level Hardening (Single Agent)
+### Phase 2: Host-Level Hardening (Delegated to 004-security)
 
-**Agent**: **security-hardening-specialist**
+**Agent**: **004-security** → **041-host-security**
 
 **Tasks**:
 1. Configure LUKS encryption (if not already)
@@ -206,9 +206,11 @@ virsh snapshot-create-as {{ VM_NAME }} snapshot-$(date +%Y%m%d) --disk-only
 echo "0 3 * * 0 virsh snapshot-create-as {{ VM_NAME }} snapshot-\$(date +\%Y\%m\%d) --disk-only" | crontab -
 ```
 
-### Phase 3: VM Configuration Hardening (Single Agent)
+### Phase 3: VM Configuration Hardening (Delegated to 004-security)
 
-**Agent**: **security-hardening-specialist**
+**Agent**: **004-security** → delegates to:
+- **042-vm-security**: UEFI, TPM, memory locking
+- **044-virtiofs-readonly**: Ransomware protection
 
 **Tasks**:
 1. Configure virtio-fs read-only mode (CRITICAL)
@@ -265,9 +267,9 @@ echo "0 3 * * 0 virsh snapshot-create-as {{ VM_NAME }} snapshot-\$(date +\%Y\%m\
 </memoryBacking>
 ```
 
-### Phase 4: Windows Guest Hardening (Single Agent - Remote via QEMU Guest Agent)
+### Phase 4: Windows Guest Hardening (Delegated to 006-automation)
 
-**Agent**: **qemu-automation-specialist**
+**Agent**: **006-automation** → **064-host-to-guest** (via QEMU Guest Agent)
 
 **Tasks** (via virsh qemu-agent-command):
 1. Enable BitLocker full disk encryption
@@ -328,9 +330,9 @@ Set-MpPreference -EnableControlledFolderAccess Enabled
 Add-MpPreference -ControlledFolderAccessProtectedFolders "C:\Users\$env:USERNAME\Documents"
 ```
 
-### Phase 5: Network Security (Single Agent)
+### Phase 5: Network Security (Delegated to 004-security)
 
-**Agent**: **security-hardening-specialist**
+**Agent**: **004-security** → **043-network-security**
 
 **Tasks**:
 1. Verify NAT mode (not bridged)
@@ -360,9 +362,9 @@ Add-MpPreference -ControlledFolderAccessProtectedFolders "C:\Users\$env:USERNAME
 </network>
 ```
 
-### Phase 6: Context7 Security Validation (Single Agent)
+### Phase 6: Context7 Security Validation (Delegated to 007-health)
 
-**Agent**: **project-health-auditor**
+**Agent**: **007-health** (with Context7 integration)
 
 **Tasks**:
 1. Query Context7 for KVM security best practices
@@ -380,9 +382,9 @@ Add-MpPreference -ControlledFolderAccessProtectedFolders "C:\Users\$env:USERNAME
 - No critical vulnerabilities detected
 - Aligned with latest security standards
 
-### Phase 7: Security Validation & Testing (Single Agent)
+### Phase 7: Security Validation & Testing (Delegated to 004-security)
 
-**Agent**: **security-hardening-specialist**
+**Agent**: **004-security** → **046-security-audit** (validation mode)
 
 **Tasks**:
 1. Test virtio-fs read-only enforcement
@@ -410,9 +412,12 @@ virsh snapshot-revert {{ VM_NAME }} <snapshot-name> --running
 # Expected: VM restores successfully
 ```
 
-### Phase 8: Constitutional Commit (Single Agent)
+### Phase 8: Constitutional Commit (Delegated to 009-git)
 
-**Agent**: **git-operations-specialist**
+**Agent**: **009-git** → delegates to:
+- **091-branch-create**: Create security-vm-hardening branch
+- **092-commit-format**: Constitutional commit message
+- **093-merge-strategy**: Merge to main with --no-ff
 
 **Tasks**:
 1. Document security configuration
