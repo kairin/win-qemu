@@ -16,9 +16,9 @@ $ARGUMENTS
 
 ## Automatic Workflow
 
-You **MUST** invoke the **master-orchestrator** agent to coordinate the auto-commit workflow.
+You **MUST** invoke the **001-orchestrator** agent to coordinate the auto-commit workflow.
 
-Pass the following instructions to master-orchestrator:
+Pass the following instructions to 001-orchestrator:
 
 ### Phase 1: Change Analysis (Parallel - 2 Tasks)
 
@@ -160,9 +160,13 @@ Validation:
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-### Phase 3: Constitutional Git Workflow (Sequential)
+### Phase 3: Constitutional Git Workflow (Delegated to 009-git)
 
-**Agent**: **git-operations-specialist**
+**Agent**: **009-git** → delegates to:
+- **091-branch-create**: Create timestamped branch
+- **092-commit-format**: Generate constitutional commit message
+- **093-merge-strategy**: Merge to main with --no-ff
+- **095-sync-remote**: Push to remote
 
 **Automatic Execution**:
 ```bash
