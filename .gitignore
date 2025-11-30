@@ -118,7 +118,7 @@ __pycache__/
 # Build artifacts
 /build/
 /dist/
-/docs-site/
+# /docs-site/  # Uncommitted: needed for GitHub Pages deployment
 
 # Installation state (contains timestamps, system-specific data)
 .installation-state/
