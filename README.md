@@ -94,10 +94,10 @@ All documentation is centralized in `docs-repo/`.
 
 ## 🤖 Multi-Agent System
 
-This project is maintained by a 62-agent 4-tier hierarchical system (1 Opus + 10 Sonnet + 51 Haiku).
+This project is maintained by an 84-agent 5-tier hierarchical system (10 Workflow + 1 Opus + 11 Sonnet + 62 Haiku).
 - **User Entry Point**: `start.sh`
 - **Agent Entry Point**: `AGENTS.md` -> `docs-repo/06-constitutional/`
-- **Slash Commands**: 9 guardian commands (`/guardian-health`, `/guardian-vm`, etc.)
+- **Workflow Agents**: 10 zero-config agents (`000-health`, `000-vm`, `000-security`, etc.)
 
 ---
 

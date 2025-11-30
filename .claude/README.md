@@ -27,27 +27,29 @@ Run native Microsoft 365 Outlook on Ubuntu 25.10 with **85-95% native performanc
 
 ---
 
-## Slash Commands (Fully Automatic)
+## Workflow Agents (Invoke via Task tool)
 
-| Command | Purpose |
-|---------|---------|
-| `/guardian-health` | 42-point health check + device-specific setup guides |
-| `/guardian-vm` | Complete VM lifecycle (create → optimize → secure → test) |
-| `/guardian-optimize` | Performance tuning with Hyper-V enlightenments |
-| `/guardian-security` | 60+ security checklist enforcement |
-| `/guardian-commit` | Constitutional Git workflow automation |
-| `/guardian-backup` | VM backup, snapshots, integrity verification |
-| `/guardian-virtiofs` | virtio-fs host setup + VM config + read-only enforcement |
-| `/guardian-cleanup` | Repository hygiene with redundancy detection |
-| `/guardian-documentation` | Doc verification, symlink restoration, SSoT validation |
-| `/guardian-deploy` | Astro build + GitHub Pages deployment + .nojekyll verification |
+| Agent | Purpose |
+|-------|---------|
+| `000-health` | 42-point health check + device-specific setup guides |
+| `000-vm` | Complete VM lifecycle (create → optimize → secure → test) |
+| `000-optimize` | Performance tuning with Hyper-V enlightenments |
+| `000-security` | 60+ security checklist enforcement |
+| `000-commit` | Constitutional Git workflow automation |
+| `000-backup` | VM backup, snapshots, integrity verification |
+| `000-virtiofs` | virtio-fs host setup + VM config + read-only enforcement |
+| `000-cleanup` | Repository hygiene with redundancy detection |
+| `000-docs` | Doc verification, symlink restoration, SSoT validation |
+| `000-deploy` | Astro build + GitHub Pages deployment + .nojekyll verification |
+
+> **Note**: Slash commands archived to `docs-repo/04-history/09-slash-commands-archive/`
 
 ---
 
-## Agent Hierarchy (80 agents)
+## Agent Hierarchy (84 agents)
 
 ```
-Tier 0 Workflow Agents (8 Sonnet - Zero-Config Automation)
+Tier 0 Workflow Agents (10 Sonnet - Zero-Config Automation)
 ├── 000-backup     → VM backup and snapshot with integrity verification
 ├── 000-cleanup    → Repository hygiene with redundancy detection
 ├── 000-commit     → Constitutional Git commit with change analysis
@@ -55,7 +57,9 @@ Tier 0 Workflow Agents (8 Sonnet - Zero-Config Automation)
 ├── 000-docs       → Documentation integrity and symlink management
 ├── 000-health     → 42-point QEMU/KVM health check
 ├── 000-optimize   → Performance tuning for 85-95% native
-└── 000-security   → 60+ security checklist enforcement
+├── 000-security   → 60+ security checklist enforcement
+├── 000-vm         → Complete VM lifecycle (create, optimize, secure, test)
+└── 000-virtiofs   → virtio-fs filesystem sharing with read-only enforcement
 
 001-orchestrator (Opus - Strategic Coordination)
 │
@@ -103,13 +107,11 @@ Tier 0 Workflow Agents (8 Sonnet - Zero-Config Automation)
 .claude/
 ├── README.md                    # This file (quick reference)
 ├── settings.local.json          # MCP permissions & configuration
-├── agents/                      # 80 agent definitions
-│   ├── 000-*.md                 # Tier 0 (Workflow orchestrators)
+├── agents/                      # 84 agent definitions
+│   ├── 000-*.md                 # Tier 0 (10 Workflow orchestrators)
 │   ├── 001-orchestrator.md      # Tier 1 (Opus)
 │   ├── 002-012-*.md             # Tier 2 (Sonnet specialists)
 │   └── 021-122-*.md             # Tier 4 (Haiku atomic)
-├── commands/                    # 10 Guardian slash commands
-│   └── guardian-*.md
 ├── rules-tailwindcss/           # Tailwind CSS v4 rules
 │   └── tailwind.md
 └── instructions-for-agents/     # Modular documentation
@@ -132,7 +134,7 @@ Tier 0 Workflow Agents (8 Sonnet - Zero-Config Automation)
 
 ## Version
 
-- **Agents**: 80 total (8 Workflow + 1 Opus + 11 Sonnet + 60 Haiku)
-- **Commands**: 10 Guardian slash commands
+- **Agents**: 84 total (10 Workflow + 1 Opus + 11 Sonnet + 62 Haiku)
+- **Slash Commands**: Archived (invoke 000-* agents directly via Task tool)
 - **Rules**: Tailwind CSS v4 + DaisyUI
 - **Last Updated**: 2025-11-30
