@@ -44,9 +44,19 @@ Run native Microsoft 365 Outlook on Ubuntu 25.10 with **85-95% native performanc
 
 ---
 
-## Agent Hierarchy (72 agents)
+## Agent Hierarchy (80 agents)
 
 ```
+Tier 0 Workflow Agents (8 Sonnet - Zero-Config Automation)
+├── 000-backup     → VM backup and snapshot with integrity verification
+├── 000-cleanup    → Repository hygiene with redundancy detection
+├── 000-commit     → Constitutional Git commit with change analysis
+├── 000-deploy     → Astro build + GitHub Pages deployment
+├── 000-docs       → Documentation integrity and symlink management
+├── 000-health     → 42-point QEMU/KVM health check
+├── 000-optimize   → Performance tuning for 85-95% native
+└── 000-security   → 60+ security checklist enforcement
+
 001-orchestrator (Opus - Strategic Coordination)
 │
 ├── Tier 2 Specialists (11 Sonnet agents)
@@ -93,7 +103,8 @@ Run native Microsoft 365 Outlook on Ubuntu 25.10 with **85-95% native performanc
 .claude/
 ├── README.md                    # This file (quick reference)
 ├── settings.local.json          # MCP permissions & configuration
-├── agents/                      # 72 agent definitions
+├── agents/                      # 80 agent definitions
+│   ├── 000-*.md                 # Tier 0 (Workflow orchestrators)
 │   ├── 001-orchestrator.md      # Tier 1 (Opus)
 │   ├── 002-012-*.md             # Tier 2 (Sonnet specialists)
 │   └── 021-122-*.md             # Tier 4 (Haiku atomic)
@@ -121,7 +132,7 @@ Run native Microsoft 365 Outlook on Ubuntu 25.10 with **85-95% native performanc
 
 ## Version
 
-- **Agents**: 72 total (1 Opus + 11 Sonnet + 60 Haiku)
+- **Agents**: 80 total (8 Workflow + 1 Opus + 11 Sonnet + 60 Haiku)
 - **Commands**: 10 Guardian slash commands
 - **Rules**: Tailwind CSS v4 + DaisyUI
 - **Last Updated**: 2025-11-30
