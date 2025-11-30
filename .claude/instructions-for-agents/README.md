@@ -2,6 +2,21 @@
 
 > **Token Optimization**: Shared instructions extracted from agents to eliminate duplication and reduce token usage by ~48%.
 
+## Symlink Awareness for LLMs
+
+**CRITICAL**: At repository root, these files are symlinks:
+- `CLAUDE.md` → symlink to `AGENTS.md`
+- `GEMINI.md` → symlink to `AGENTS.md`
+- `AGENTS.md` → gateway document (single source of truth)
+
+When following links from AGENTS.md, resolve paths relative to repository root:
+```
+AGENTS.md contains: [Agent System](docs-repo/06-constitutional/04-agent-system.md)
+Absolute path: /home/kkk/Apps/win-qemu/docs-repo/06-constitutional/04-agent-system.md
+```
+
+---
+
 ## Directory Structure
 
 ```
@@ -9,7 +24,7 @@
 ├── README.md                           (this file)
 ├── architecture/
 │   ├── agent-delegation.md             (4-tier hierarchy, decision tree)
-│   └── agent-registry.md               (60-agent reference)
+│   └── agent-registry.md               (84-agent reference)
 ├── requirements/
 │   ├── constitutional-rules.md         (core mandates, non-negotiable)
 │   ├── git-workflow.md                 (branch naming, commit format)
@@ -40,5 +55,6 @@ Agent file → References instruction file → Back to agent
 Example: 003-performance.md → hyperv-enlightenments.md
 ```
 
-**Last Updated**: 2025-11-28
+**Last Updated**: 2025-11-30
 **Token Savings**: ~48% reduction through shared instructions
+**Agent Count**: 84 total (10 Workflow + 1 Opus + 11 Sonnet + 62 Haiku)
