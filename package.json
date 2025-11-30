@@ -1,0 +1,19 @@
+{
+  "name": "win-qemu",
+  "version": "1.0.0",
+  "description": "QEMU/KVM Windows 11 Virtualization Project",
+  "private": true,
+  "scripts": {
+    "docs:dev": "npm --prefix docs-astro run dev",
+    "docs:build": "npm --prefix docs-astro run build",
+    "docs:preview": "npm --prefix docs-astro run preview"
+  },
+  "keywords": [
+    "qemu",
+    "kvm",
+    "windows",
+    "virtualization",
+    "ubuntu"
+  ],
+  "license": "MIT"
+}

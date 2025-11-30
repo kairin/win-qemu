@@ -1,0 +1,72 @@
+---
+interface ProgressItem {
+  label: string;
+  value: number;
+  max?: number;
+  status?: 'success' | 'warning' | 'error' | 'info';
+  description?: string;
+}
+
+interface Props {
+  title?: string;
+  items: ProgressItem[];
+  layout?: 'horizontal' | 'vertical';
+}
+
+const { title, items, layout = 'horizontal' } = Astro.props;
+
+function getProgressClass(status?: string): string {
+  switch (status) {
+    case 'success': return 'progress-success';
+    case 'warning': return 'progress-warning';
+    case 'error': return 'progress-error';
+    case 'info': return 'progress-info';
+    default: return 'progress-primary';
+  }
+}
+
+function getValueClass(status?: string): string {
+  switch (status) {
+    case 'success': return 'text-success';
+    case 'warning': return 'text-warning';
+    case 'error': return 'text-error';
+    case 'info': return 'text-info';
+    default: return 'text-primary';
+  }
+}
+
+// Calculate overall progress
+const totalValue = items.reduce((sum, item) => sum + item.value, 0);
+const totalMax = items.reduce((sum, item) => sum + (item.max || 100), 0);
+const overallProgress = Math.round((totalValue / totalMax) * 100);
+---
+
+<div class="card bg-base-200 shadow-sm">
+  <div class="card-body">
+    {title && (
+      <h3 class="card-title text-lg mb-4">
+        {title}
+        <span class="badge badge-primary">{overallProgress}%</span>
+      </h3>
+    )}
+
+    <div class={`stats ${layout === 'vertical' ? 'stats-vertical' : 'stats-vertical lg:stats-horizontal'} shadow-xs bg-base-100`}>
+      {items.map((item) => (
+        <div class="stat">
+          <div class="stat-title">{item.label}</div>
+          <div class={`stat-value ${getValueClass(item.status)}`}>
+            {item.value}{item.max !== 100 ? `/${item.max}` : '%'}
+          </div>
+          {item.description && (
+            <div class="stat-desc">{item.description}</div>
+          )}
+          <progress
+            class={`progress ${getProgressClass(item.status)} w-full mt-2`}
+            value={item.value}
+            max={item.max || 100}
+          />
+        </div>
+      ))}
+    </div>
+  </div>
+</div>

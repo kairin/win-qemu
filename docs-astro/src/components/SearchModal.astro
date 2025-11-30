@@ -1,0 +1,162 @@
+---
+// SearchModal - Pagefind search integration
+// Pagefind will be installed during build
+---
+
+<dialog id="search-modal" class="modal modal-bottom sm:modal-middle">
+  <div class="modal-box max-w-2xl">
+    <form method="dialog">
+      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+    </form>
+
+    <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      Search Documentation
+    </h3>
+
+    <div class="form-control">
+      <input
+        type="text"
+        id="search-input"
+        placeholder="Type to search..."
+        class="input input-bordered input-primary w-full"
+        autocomplete="off"
+      />
+    </div>
+
+    <div id="search-results" class="mt-4 max-h-96 overflow-y-auto">
+      <div class="text-center text-base-content/50 py-8">
+        <p>Start typing to search...</p>
+        <p class="text-sm mt-2">Press <kbd class="kbd kbd-sm">Esc</kbd> to close</p>
+      </div>
+    </div>
+
+    <div class="modal-action justify-between">
+      <div class="text-sm text-base-content/50">
+        <kbd class="kbd kbd-sm">↑</kbd>
+        <kbd class="kbd kbd-sm">↓</kbd> Navigate
+        <kbd class="kbd kbd-sm ml-2">Enter</kbd> Select
+      </div>
+      <form method="dialog">
+        <button class="btn btn-sm">Close</button>
+      </form>
+    </div>
+  </div>
+
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+
+<script>
+  // Search modal functionality
+  const searchBtn = document.getElementById('search-btn');
+  const searchModal = document.getElementById('search-modal') as HTMLDialogElement;
+  const searchInput = document.getElementById('search-input') as HTMLInputElement;
+  const searchResults = document.getElementById('search-results');
+
+  // Open modal
+  searchBtn?.addEventListener('click', () => {
+    searchModal?.showModal();
+    setTimeout(() => searchInput?.focus(), 100);
+  });
+
+  // Keyboard shortcut (Cmd/Ctrl + K)
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      searchModal?.showModal();
+      setTimeout(() => searchInput?.focus(), 100);
+    }
+  });
+
+  // Close on escape
+  searchModal?.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      searchModal.close();
+    }
+  });
+
+  // Search functionality (will integrate with Pagefind when available)
+  let searchTimeout: ReturnType<typeof setTimeout>;
+
+  searchInput?.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+
+    const query = searchInput.value.trim();
+
+    if (!query) {
+      if (searchResults) {
+        searchResults.innerHTML = `
+          <div class="text-center text-base-content/50 py-8">
+            <p>Start typing to search...</p>
+            <p class="text-sm mt-2">Press <kbd class="kbd kbd-sm">Esc</kbd> to close</p>
+          </div>
+        `;
+      }
+      return;
+    }
+
+    // Debounce search
+    searchTimeout = setTimeout(async () => {
+      if (searchResults) {
+        searchResults.innerHTML = `
+          <div class="flex justify-center py-8">
+            <span class="loading loading-spinner loading-md"></span>
+          </div>
+        `;
+      }
+
+      // Try to use Pagefind if available
+      try {
+        // @ts-ignore - Pagefind is loaded at runtime
+        if (typeof window.pagefind !== 'undefined') {
+          // @ts-ignore
+          const search = await window.pagefind.search(query);
+          const results = await Promise.all(search.results.slice(0, 10).map((r: any) => r.data()));
+
+          if (results.length === 0) {
+            if (searchResults) {
+              searchResults.innerHTML = `
+                <div class="text-center text-base-content/50 py-8">
+                  <p>No results found for "${query}"</p>
+                </div>
+              `;
+            }
+            return;
+          }
+
+          if (searchResults) {
+            searchResults.innerHTML = results.map((result: any) => `
+              <a href="${result.url}" class="block p-4 rounded-sm hover:bg-base-300 transition-colors mb-2">
+                <div class="font-medium">${result.meta?.title || 'Untitled'}</div>
+                <div class="text-sm text-base-content/70 mt-1">${result.excerpt}</div>
+              </a>
+            `).join('');
+          }
+        } else {
+          // Fallback: simple static search message
+          if (searchResults) {
+            searchResults.innerHTML = `
+              <div class="text-center text-base-content/50 py-8">
+                <p>Search index not loaded yet.</p>
+                <p class="text-sm mt-2">Pagefind will be available after a full build.</p>
+              </div>
+            `;
+          }
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        if (searchResults) {
+          searchResults.innerHTML = `
+            <div class="text-center text-base-content/50 py-8">
+              <p>Search is not available in development mode.</p>
+            </div>
+          `;
+        }
+      }
+    }, 300);
+  });
+</script>

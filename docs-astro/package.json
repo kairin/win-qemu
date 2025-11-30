@@ -1,5 +1,5 @@
 {
-  "name": "proud-photon",
+  "name": "home-kkk-apps-win-qemu-docs-astro",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
@@ -9,6 +9,10 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^5.16.1"
+    "@pagefind/default-ui": "^1.4.0",
+    "@tailwindcss/vite": "^4.1.17",
+    "astro": "^5.16.3",
+    "daisyui": "^5.5.5",
+    "tailwindcss": "^4.1.17"
   }
 }

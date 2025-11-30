@@ -1,0 +1,91 @@
+---
+interface Props {
+  code: string;
+  lang?: string;
+  filename?: string;
+  showLineNumbers?: boolean;
+}
+
+const { code, lang = 'bash', filename, showLineNumbers = false } = Astro.props;
+
+// Simple syntax highlighting for common patterns
+function highlight(code: string, lang: string): string {
+  let highlighted = code
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  if (lang === 'bash' || lang === 'sh') {
+    // Comments
+    highlighted = highlighted.replace(/(#.*)$/gm, '<span class="text-base-content/50">$1</span>');
+    // Commands at start of line
+    highlighted = highlighted.replace(/^(\$\s*)/gm, '<span class="text-secondary">$1</span>');
+    // Strings
+    highlighted = highlighted.replace(/(".*?"|'.*?')/g, '<span class="text-success">$1</span>');
+    // Variables
+    highlighted = highlighted.replace(/(\$\{?\w+\}?)/g, '<span class="text-warning">$1</span>');
+  } else if (lang === 'json') {
+    // Keys
+    highlighted = highlighted.replace(/"(\w+)":/g, '<span class="text-primary">"$1"</span>:');
+    // String values
+    highlighted = highlighted.replace(/: "(.+?)"/g, ': <span class="text-success">"$1"</span>');
+    // Numbers
+    highlighted = highlighted.replace(/: (\d+)/g, ': <span class="text-warning">$1</span>');
+    // Booleans
+    highlighted = highlighted.replace(/: (true|false)/g, ': <span class="text-accent">$1</span>');
+  }
+
+  return highlighted;
+}
+
+const highlightedCode = highlight(code, lang);
+const lines = code.split('\n');
+---
+
+<div class="relative group my-4">
+  {filename && (
+    <div class="flex items-center gap-2 px-4 py-2 bg-base-300 rounded-t-sm border-b border-base-100">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-base-content/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <span class="text-sm text-base-content/70 font-mono">{filename}</span>
+    </div>
+  )}
+  <pre class={`bg-base-300 ${filename ? 'rounded-b-sm' : 'rounded-sm'} p-4 overflow-x-auto`}><code class="font-mono text-sm leading-relaxed" set:html={showLineNumbers ? lines.map((line, i) => `<span class="text-base-content/30 select-none mr-4">${String(i + 1).padStart(3, ' ')}</span>${highlight(line, lang)}`).join('\n') : highlightedCode} /></pre>
+
+  <button
+    class="btn btn-xs btn-ghost absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity gap-1"
+    data-code={code}
+    onclick="copyCode(this)"
+    aria-label="Copy code"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 copy-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 check-icon hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    </svg>
+    <span class="copy-text">Copy</span>
+  </button>
+</div>
+
+<script is:inline>
+  function copyCode(button) {
+    const code = button.dataset.code;
+    navigator.clipboard.writeText(code).then(() => {
+      const copyIcon = button.querySelector('.copy-icon');
+      const checkIcon = button.querySelector('.check-icon');
+      const copyText = button.querySelector('.copy-text');
+
+      copyIcon.classList.add('hidden');
+      checkIcon.classList.remove('hidden');
+      copyText.textContent = 'Copied!';
+
+      setTimeout(() => {
+        copyIcon.classList.remove('hidden');
+        checkIcon.classList.add('hidden');
+        copyText.textContent = 'Copy';
+      }, 2000);
+    });
+  }
+</script>

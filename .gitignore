@@ -118,6 +118,7 @@ __pycache__/
 # Build artifacts
 /build/
 /dist/
+/docs-site/
 
 # Installation state (contains timestamps, system-specific data)
 .installation-state/
