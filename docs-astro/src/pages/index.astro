@@ -3,220 +3,120 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="Home" description="Run Windows 11 on Ubuntu with 85-95% native performance using QEMU/KVM">
-  <!-- Hero Section -->
-  <section class="hero min-h-[60vh]">
-    <div class="hero-content text-center">
-      <div class="max-w-3xl">
-        <div class="badge badge-primary badge-lg mb-4">Ubuntu 25.10 + Windows 11 Pro</div>
-        <h1 class="text-5xl font-bold text-wrap-balance">
-          <span class="text-primary">QEMU</span>/<span class="text-secondary">KVM</span>
-          <br />
-          Windows Virtualization
-        </h1>
-        <p class="py-6 text-lg text-base-content/80">
-          Run native Microsoft 365 Outlook on Ubuntu with <strong class="text-accent">85-95% native performance</strong>.
-          Complete automation with 62 AI agents and 9 slash commands.
-        </p>
-        <div class="flex flex-wrap justify-center gap-4">
-          <a href={`${import.meta.env.BASE_URL}installation`} class="btn btn-primary btn-lg">
-            Get Started
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-            </svg>
-          </a>
-          <a href={`${import.meta.env.BASE_URL}overview`} class="btn btn-outline btn-lg">
-            Learn More
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- Progress Section -->
-  <section class="py-12">
-    <div class="text-center mb-8">
-      <h2 class="text-3xl font-bold">Project Progress</h2>
-      <p class="text-base-content/70 mt-2">Real-time implementation status</p>
-    </div>
+  <section class="fade-in">
+    <h2 class="font-display text-xl font-semibold text-base-content">Project Progress</h2>
+    <p class="mt-2 text-sm/6 text-base-content/70">Real-time implementation status</p>
 
-    <div class="stats stats-vertical lg:stats-horizontal shadow-sm w-full bg-base-200">
-      <div class="stat">
-        <div class="stat-figure text-primary">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div class="stat-title">Overall Progress</div>
-        <div class="stat-value text-primary">68.6%</div>
-        <div class="stat-desc">
-          <progress class="progress progress-primary w-full" value="68.6" max="100"></progress>
+    <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5">
+        <div class="text-sm text-base-content/70">Overall Progress</div>
+        <div class="mt-1 text-2xl font-semibold text-primary">68.6%</div>
+        <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-base-300">
+          <div class="h-full bg-primary" style="width: 68.6%"></div>
         </div>
       </div>
-
-      <div class="stat">
-        <div class="stat-figure text-secondary">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-          </svg>
-        </div>
-        <div class="stat-title">Development</div>
-        <div class="stat-value text-secondary">100%</div>
-        <div class="stat-desc">Scripts & Agents Complete</div>
+      <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5">
+        <div class="text-sm text-base-content/70">Development</div>
+        <div class="mt-1 text-2xl font-semibold text-secondary">100%</div>
+        <div class="mt-2 text-xs text-base-content/50">Scripts & Agents Complete</div>
       </div>
-
-      <div class="stat">
-        <div class="stat-figure text-accent">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-          </svg>
-        </div>
-        <div class="stat-title">Deployment</div>
-        <div class="stat-value text-accent">0%</div>
-        <div class="stat-desc">QEMU/KVM Not Installed</div>
+      <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5">
+        <div class="text-sm text-base-content/70">Deployment</div>
+        <div class="mt-1 text-2xl font-semibold text-accent">0%</div>
+        <div class="mt-2 text-xs text-base-content/50">QEMU/KVM Not Installed</div>
       </div>
     </div>
   </section>
 
   <!-- Features Grid -->
-  <section class="py-12">
-    <div class="text-center mb-8">
-      <h2 class="text-3xl font-bold">Key Features</h2>
-      <p class="text-base-content/70 mt-2">Production-grade Windows virtualization</p>
-    </div>
+  <section class="mt-16 fade-in">
+    <h2 class="font-display text-xl font-semibold text-base-content">Key Features</h2>
+    <p class="mt-2 text-sm/6 text-base-content/70">Production-grade Windows virtualization</p>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <!-- Feature 1 -->
-      <div class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow">
-        <div class="card-body">
-          <div class="badge badge-primary mb-2">Performance</div>
-          <h3 class="card-title">14 Hyper-V Enlightenments</h3>
-          <p class="text-base-content/70">Hardware-level Windows optimization for near-native performance.</p>
-        </div>
+    <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="group rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5 transition-all hover:ring-primary/20">
+        <span class="badge badge-primary badge-sm">Performance</span>
+        <h3 class="mt-3 font-display font-semibold text-base-content">14 Hyper-V Enlightenments</h3>
+        <p class="mt-2 text-sm text-base-content/70">Hardware-level Windows optimization for near-native performance.</p>
       </div>
 
-      <!-- Feature 2 -->
-      <div class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow">
-        <div class="card-body">
-          <div class="badge badge-secondary mb-2">Storage</div>
-          <h3 class="card-title">VirtIO + virtio-fs</h3>
-          <p class="text-base-content/70">High-performance disk I/O with secure host filesystem sharing.</p>
-        </div>
+      <div class="group rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5 transition-all hover:ring-secondary/20">
+        <span class="badge badge-secondary badge-sm">Storage</span>
+        <h3 class="mt-3 font-display font-semibold text-base-content">VirtIO + virtio-fs</h3>
+        <p class="mt-2 text-sm text-base-content/70">High-performance disk I/O with secure host filesystem sharing.</p>
       </div>
 
-      <!-- Feature 3 -->
-      <div class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow">
-        <div class="card-body">
-          <div class="badge badge-accent mb-2">Security</div>
-          <h3 class="card-title">60+ Hardening Items</h3>
-          <p class="text-base-content/70">LUKS encryption, UFW firewall, read-only mounts for ransomware protection.</p>
-        </div>
+      <div class="group rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5 transition-all hover:ring-accent/20">
+        <span class="badge badge-accent badge-sm">Security</span>
+        <h3 class="mt-3 font-display font-semibold text-base-content">60+ Hardening Items</h3>
+        <p class="mt-2 text-sm text-base-content/70">LUKS encryption, UFW firewall, read-only mounts for ransomware protection.</p>
       </div>
 
-      <!-- Feature 4 -->
-      <div class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow">
-        <div class="card-body">
-          <div class="badge badge-info mb-2">Automation</div>
-          <h3 class="card-title">62 AI Agents</h3>
-          <p class="text-base-content/70">4-tier hierarchical system (Opus/Sonnet/Haiku) for complete workflow automation.</p>
-        </div>
+      <div class="group rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5 transition-all hover:ring-info/20">
+        <span class="badge badge-info badge-sm">Benchmark</span>
+        <h3 class="mt-3 font-display font-semibold text-base-content">Near-Native Performance</h3>
+        <p class="mt-2 text-sm text-base-content/70">85-95% native Windows performance with VirtIO drivers and Hyper-V enlightenments.</p>
       </div>
 
-      <!-- Feature 5 -->
-      <div class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow">
-        <div class="card-body">
-          <div class="badge badge-success mb-2">GPU</div>
-          <h3 class="card-title">Intel iGPU Passthrough</h3>
-          <p class="text-base-content/70">VFIO-based GPU passthrough for accelerated Windows graphics.</p>
-        </div>
+      <div class="group rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5 transition-all hover:ring-success/20">
+        <span class="badge badge-success badge-sm">GPU</span>
+        <h3 class="mt-3 font-display font-semibold text-base-content">Intel iGPU Passthrough</h3>
+        <p class="mt-2 text-sm text-base-content/70">VFIO-based GPU passthrough for accelerated Windows graphics.</p>
       </div>
 
-      <!-- Feature 6 -->
-      <div class="card bg-base-200 shadow-sm hover:shadow-md transition-shadow">
-        <div class="card-body">
-          <div class="badge badge-warning mb-2">Commands</div>
-          <h3 class="card-title">9 Slash Commands</h3>
-          <p class="text-base-content/70">One-command workflows: /guardian-vm, /guardian-security, /guardian-optimize</p>
-        </div>
+      <div class="group rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5 transition-all hover:ring-warning/20">
+        <span class="badge badge-warning badge-sm">Easy</span>
+        <h3 class="mt-3 font-display font-semibold text-base-content">One-Command Setup</h3>
+        <p class="mt-2 text-sm text-base-content/70">TUI menu with gum, automated scripts, and comprehensive logging.</p>
       </div>
     </div>
   </section>
 
-  <!-- System Requirements -->
-  <section class="py-12">
-    <div class="text-center mb-8">
-      <h2 class="text-3xl font-bold">System Requirements</h2>
-      <p class="text-base-content/70 mt-2">Tested configuration</p>
-    </div>
+  <!-- Reference Hardware -->
+  <section class="mt-16 fade-in">
+    <h2 class="font-display text-xl font-semibold text-base-content">Reference Hardware</h2>
+    <p class="mt-2 text-sm/6 text-base-content/70">Development baseline - this project was built and tested on this equipment</p>
 
-    <div class="overflow-x-auto">
-      <table class="table table-zebra w-full bg-base-200 rounded-sm">
+    <div class="mt-6 overflow-x-auto">
+      <table class="w-full text-left text-sm">
         <thead>
-          <tr>
-            <th>Component</th>
-            <th>Requirement</th>
-            <th>Status</th>
+          <tr class="border-b border-base-content/10">
+            <th class="py-2 pr-4 font-semibold">Component</th>
+            <th class="py-2 pr-4 font-semibold">Requirement</th>
+            <th class="py-2 font-semibold">Status</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td class="font-medium">CPU</td>
-            <td>Intel/AMD with VT-x/AMD-V + IOMMU</td>
-            <td><span class="badge badge-success gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-              </svg>
-              i7-14700 (16 IOMMU groups)
-            </span></td>
+        <tbody class="text-base-content/80">
+          <tr class="border-b border-base-content/5">
+            <td class="py-3 pr-4 font-medium">CPU</td>
+            <td class="py-3 pr-4">Intel/AMD with VT-x/AMD-V + IOMMU</td>
+            <td class="py-3"><span class="badge badge-success badge-sm gap-1">i7-14700</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-3 pr-4 font-medium">RAM</td>
+            <td class="py-3 pr-4">16GB minimum (32GB+ recommended)</td>
+            <td class="py-3"><span class="badge badge-success badge-sm gap-1">64GB DDR5</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-3 pr-4 font-medium">GPU (Host)</td>
+            <td class="py-3 pr-4">NVIDIA for Ubuntu GPU workloads</td>
+            <td class="py-3"><span class="badge badge-success badge-sm gap-1">RTX 3060</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-3 pr-4 font-medium">GPU (Guest)</td>
+            <td class="py-3 pr-4">Intel iGPU for Windows VM</td>
+            <td class="py-3"><span class="badge badge-success badge-sm gap-1">UHD 770</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-3 pr-4 font-medium">Storage</td>
+            <td class="py-3 pr-4">NVMe SSD (100GB+ free)</td>
+            <td class="py-3"><span class="badge badge-success badge-sm gap-1">Available</span></td>
           </tr>
           <tr>
-            <td class="font-medium">RAM</td>
-            <td>16GB minimum (32GB+ recommended)</td>
-            <td><span class="badge badge-success gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-              </svg>
-              64GB DDR5
-            </span></td>
-          </tr>
-          <tr>
-            <td class="font-medium">GPU (Host)</td>
-            <td>NVIDIA for Ubuntu AI workloads</td>
-            <td><span class="badge badge-success gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-              </svg>
-              RTX 3060
-            </span></td>
-          </tr>
-          <tr>
-            <td class="font-medium">GPU (Guest)</td>
-            <td>Intel iGPU for Windows VM</td>
-            <td><span class="badge badge-success gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-              </svg>
-              UHD 770 (IOMMU Group 0)
-            </span></td>
-          </tr>
-          <tr>
-            <td class="font-medium">Storage</td>
-            <td>NVMe SSD (100GB+ free)</td>
-            <td><span class="badge badge-success gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-              </svg>
-              Available
-            </span></td>
-          </tr>
-          <tr>
-            <td class="font-medium">OS</td>
-            <td>Ubuntu 25.10</td>
-            <td><span class="badge badge-success gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-              </svg>
-              Kernel 6.17.0-7
-            </span></td>
+            <td class="py-3 pr-4 font-medium">OS</td>
+            <td class="py-3 pr-4">Ubuntu 25.10</td>
+            <td class="py-3"><span class="badge badge-success badge-sm gap-1">Kernel 6.17.0-7</span></td>
           </tr>
         </tbody>
       </table>
@@ -224,34 +124,31 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </section>
 
   <!-- Quick Start -->
-  <section class="py-12">
-    <div class="text-center mb-8">
-      <h2 class="text-3xl font-bold">Quick Start</h2>
-      <p class="text-base-content/70 mt-2">Get running in minutes</p>
-    </div>
+  <section class="mt-16 fade-in">
+    <h2 class="font-display text-xl font-semibold text-base-content">Quick Start</h2>
+    <p class="mt-2 text-sm/6 text-base-content/70">Get running in minutes</p>
 
-    <div class="mockup-code bg-base-300 text-base-content">
-      <pre data-prefix="$"><code>git clone https://github.com/your-username/win-qemu.git</code></pre>
-      <pre data-prefix="$"><code>cd win-qemu</code></pre>
-      <pre data-prefix="$"><code>sudo ./scripts/install-master.sh</code></pre>
-      <pre data-prefix=">" class="text-success"><code>QEMU/KVM installation complete!</code></pre>
-      <pre data-prefix="$"><code>./start.sh  # Launch TUI menu</code></pre>
+    <div class="mt-6 overflow-x-auto rounded-xl bg-base-300 p-4">
+      <pre class="text-sm"><code class="text-base-content/90"><span class="text-base-content/50">$</span> git clone https://github.com/kairin/win-qemu.git
+<span class="text-base-content/50">$</span> cd win-qemu
+<span class="text-base-content/50">$</span> sudo ./scripts/install-master.sh
+<span class="text-success">&gt;</span> QEMU/KVM installation complete!
+<span class="text-base-content/50">$</span> ./start.sh  <span class="text-base-content/50"># Launch TUI menu</span></code></pre>
     </div>
   </section>
 
   <!-- CTA Section -->
-  <section class="py-12">
-    <div class="card bg-linear-to-r from-primary/20 to-secondary/20 shadow-sm">
-      <div class="card-body text-center">
-        <h2 class="text-3xl font-bold">Ready to Get Started?</h2>
-        <p class="text-base-content/70 max-w-2xl mx-auto">
-          Follow our step-by-step installation guide to set up QEMU/KVM with all optimizations and security hardening.
-        </p>
-        <div class="card-actions justify-center mt-4">
-          <a href={`${import.meta.env.BASE_URL}installation`} class="btn btn-primary btn-lg">
-            View Installation Guide
-          </a>
-        </div>
+  <section class="mt-16 fade-in">
+    <div class="rounded-xl bg-base-200 p-8 ring-1 ring-base-content/5 text-center">
+      <h2 class="font-display text-2xl font-semibold text-base-content">Ready to Get Started?</h2>
+      <p class="mt-2 text-sm/6 text-base-content/70 max-w-xl mx-auto">
+        Follow our step-by-step installation guide to set up QEMU/KVM with all optimizations and security hardening.
+      </p>
+      <div class="mt-6">
+        <a href={`${import.meta.env.BASE_URL}installation`} class="btn btn-primary">
+          View Installation Guide
+          <span aria-hidden="true">&rarr;</span>
+        </a>
       </div>
     </div>
   </section>

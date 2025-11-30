@@ -4,138 +4,98 @@ import CodeBlock from '../components/CodeBlock.astro';
 ---
 
 <BaseLayout title="Performance" description="Performance optimization guide for QEMU/KVM Windows 11 virtualization">
-  <div class="max-w-4xl mx-auto">
-    <!-- Header -->
-    <div class="mb-8">
-      <div class="breadcrumbs text-sm mb-4">
-        <ul>
-          <li><a href={import.meta.env.BASE_URL}>Home</a></li>
-          <li>Performance</li>
-        </ul>
-      </div>
-      <h1 class="text-4xl font-bold mb-4">Performance Optimization</h1>
-      <p class="text-lg text-base-content/70">
-        Achieve 85-95% native Windows performance with these optimizations
-      </p>
+  <!-- Header -->
+  <section class="fade-in">
+    <h2 class="font-display text-xl font-semibold text-base-content">Performance Optimization</h2>
+    <p class="mt-2 text-sm/6 text-base-content/70">
+      Achieve 85-95% native Windows performance with these optimizations
+    </p>
+  </section>
+
+  <!-- Performance Target -->
+  <section class="mt-8 fade-in">
+    <div class="rounded-xl bg-info/10 p-4 ring-1 ring-info/20">
+      <h3 class="font-semibold text-info">Target Performance: 85-95% Native</h3>
+      <p class="mt-1 text-sm text-base-content/70">CPU ~95% &bull; Disk I/O ~90% &bull; Network ~95% &bull; Graphics (with passthrough) ~85%</p>
+    </div>
+  </section>
+
+  <!-- Hyper-V Enlightenments -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">14 Hyper-V Enlightenments</h3>
+    <p class="mt-2 text-sm/6 text-base-content/70">Windows guests benefit significantly from Hyper-V enlightenments - special optimizations that improve performance:</p>
+
+    <div class="mt-6 overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="border-b border-base-content/10">
+            <th class="py-2 pr-4 font-semibold">#</th>
+            <th class="py-2 pr-4 font-semibold">Enlightenment</th>
+            <th class="py-2 pr-4 font-semibold">Purpose</th>
+            <th class="py-2 font-semibold">Impact</th>
+          </tr>
+        </thead>
+        <tbody class="text-base-content/80">
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">1</td>
+            <td class="py-2 pr-4 font-mono text-xs">hv_relaxed</td>
+            <td class="py-2 pr-4">Relaxed timing</td>
+            <td class="py-2"><span class="badge badge-success badge-xs">High</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">2</td>
+            <td class="py-2 pr-4 font-mono text-xs">hv_vapic</td>
+            <td class="py-2 pr-4">Virtual APIC</td>
+            <td class="py-2"><span class="badge badge-success badge-xs">High</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">3</td>
+            <td class="py-2 pr-4 font-mono text-xs">hv_spinlocks</td>
+            <td class="py-2 pr-4">Spinlock optimization</td>
+            <td class="py-2"><span class="badge badge-success badge-xs">High</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">4</td>
+            <td class="py-2 pr-4 font-mono text-xs">hv_vpindex</td>
+            <td class="py-2 pr-4">VP index MSR</td>
+            <td class="py-2"><span class="badge badge-info badge-xs">Medium</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">5</td>
+            <td class="py-2 pr-4 font-mono text-xs">hv_time</td>
+            <td class="py-2 pr-4">Time synchronization</td>
+            <td class="py-2"><span class="badge badge-success badge-xs">High</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">6-8</td>
+            <td class="py-2 pr-4 font-mono text-xs">hv_crash, reset, runtime</td>
+            <td class="py-2 pr-4">System events</td>
+            <td class="py-2"><span class="badge badge-warning badge-xs">Low</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">9-10</td>
+            <td class="py-2 pr-4 font-mono text-xs">hv_synic, hv_stimer</td>
+            <td class="py-2 pr-4">Synthetic interrupts/timers</td>
+            <td class="py-2"><span class="badge badge-success badge-xs">High</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">11-12</td>
+            <td class="py-2 pr-4 font-mono text-xs">hv_frequencies, reenlightenment</td>
+            <td class="py-2 pr-4">Frequency/Migration</td>
+            <td class="py-2"><span class="badge badge-info badge-xs">Medium</span></td>
+          </tr>
+          <tr>
+            <td class="py-2 pr-4">13-14</td>
+            <td class="py-2 pr-4 font-mono text-xs">hv_tlbflush, hv_ipi</td>
+            <td class="py-2 pr-4">TLB flush/IPI optimization</td>
+            <td class="py-2"><span class="badge badge-success badge-xs">High</span></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <!-- Performance Target -->
-    <div class="alert mb-8">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info shrink-0 w-6 h-6">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-      </svg>
-      <div>
-        <h3 class="font-bold">Target Performance: 85-95% Native</h3>
-        <div class="text-sm">CPU ~95% • Disk I/O ~90% • Network ~95% • Graphics (with passthrough) ~85%</div>
-      </div>
-    </div>
-
-    <!-- Hyper-V Enlightenments -->
-    <div class="mt-8">
-      <h2 class="text-2xl font-bold mb-6">14 Hyper-V Enlightenments</h2>
-      <p class="mb-4">Windows guests benefit significantly from Hyper-V enlightenments - special optimizations that improve performance:</p>
-
-      <div class="overflow-x-auto mb-6">
-        <table class="table table-zebra bg-base-200 rounded-sm">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Enlightenment</th>
-              <th>Purpose</th>
-              <th>Impact</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1</td>
-              <td class="font-mono text-sm">hv_relaxed</td>
-              <td>Relaxed timing</td>
-              <td><span class="badge badge-success">High</span></td>
-            </tr>
-            <tr>
-              <td>2</td>
-              <td class="font-mono text-sm">hv_vapic</td>
-              <td>Virtual APIC</td>
-              <td><span class="badge badge-success">High</span></td>
-            </tr>
-            <tr>
-              <td>3</td>
-              <td class="font-mono text-sm">hv_spinlocks</td>
-              <td>Spinlock optimization</td>
-              <td><span class="badge badge-success">High</span></td>
-            </tr>
-            <tr>
-              <td>4</td>
-              <td class="font-mono text-sm">hv_vpindex</td>
-              <td>VP index MSR</td>
-              <td><span class="badge badge-info">Medium</span></td>
-            </tr>
-            <tr>
-              <td>5</td>
-              <td class="font-mono text-sm">hv_time</td>
-              <td>Time synchronization</td>
-              <td><span class="badge badge-success">High</span></td>
-            </tr>
-            <tr>
-              <td>6</td>
-              <td class="font-mono text-sm">hv_crash</td>
-              <td>Crash notification</td>
-              <td><span class="badge badge-warning">Low</span></td>
-            </tr>
-            <tr>
-              <td>7</td>
-              <td class="font-mono text-sm">hv_reset</td>
-              <td>Guest-initiated reset</td>
-              <td><span class="badge badge-warning">Low</span></td>
-            </tr>
-            <tr>
-              <td>8</td>
-              <td class="font-mono text-sm">hv_runtime</td>
-              <td>Runtime data</td>
-              <td><span class="badge badge-info">Medium</span></td>
-            </tr>
-            <tr>
-              <td>9</td>
-              <td class="font-mono text-sm">hv_synic</td>
-              <td>Synthetic interrupts</td>
-              <td><span class="badge badge-success">High</span></td>
-            </tr>
-            <tr>
-              <td>10</td>
-              <td class="font-mono text-sm">hv_stimer</td>
-              <td>Synthetic timers</td>
-              <td><span class="badge badge-success">High</span></td>
-            </tr>
-            <tr>
-              <td>11</td>
-              <td class="font-mono text-sm">hv_frequencies</td>
-              <td>Frequency MSRs</td>
-              <td><span class="badge badge-info">Medium</span></td>
-            </tr>
-            <tr>
-              <td>12</td>
-              <td class="font-mono text-sm">hv_reenlightenment</td>
-              <td>Migration support</td>
-              <td><span class="badge badge-info">Medium</span></td>
-            </tr>
-            <tr>
-              <td>13</td>
-              <td class="font-mono text-sm">hv_tlbflush</td>
-              <td>TLB flush optimization</td>
-              <td><span class="badge badge-success">High</span></td>
-            </tr>
-            <tr>
-              <td>14</td>
-              <td class="font-mono text-sm">hv_ipi</td>
-              <td>IPI optimization</td>
-              <td><span class="badge badge-success">High</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <CodeBlock
-        code={`# Apply all Hyper-V enlightenments
+    <CodeBlock
+      code={`# Apply all Hyper-V enlightenments
 ./scripts/configure-performance.sh
 
 # Or add manually to VM XML:
@@ -156,52 +116,44 @@ import CodeBlock from '../components/CodeBlock.astro';
     <ipi state="on"/>
   </hyperv>
 </features>`}
-        lang="bash"
-        filename="hyperv-enlightenments.xml"
-      />
-    </div>
+      lang="xml"
+      filename="hyperv-enlightenments.xml"
+    />
+  </section>
 
-    <div class="divider"></div>
+  <!-- VirtIO Configuration -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">VirtIO Optimization</h3>
 
-    <!-- VirtIO Configuration -->
-    <div class="mt-8">
-      <h2 class="text-2xl font-bold mb-6">VirtIO Optimization</h2>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div class="card bg-base-200">
-          <div class="card-body">
-            <h3 class="card-title">VirtIO Disk</h3>
-            <ul class="list-disc list-inside text-base-content/70 space-y-1">
-              <li>Use VirtIO-SCSI for best performance</li>
-              <li>Enable discard for SSD TRIM</li>
-              <li>Use raw format over qcow2</li>
-              <li>Enable I/O threads</li>
-            </ul>
-          </div>
-        </div>
-        <div class="card bg-base-200">
-          <div class="card-body">
-            <h3 class="card-title">VirtIO Network</h3>
-            <ul class="list-disc list-inside text-base-content/70 space-y-1">
-              <li>Use virtio-net driver</li>
-              <li>Enable multi-queue</li>
-              <li>Use virtio-net-pci</li>
-              <li>Consider vhost-net</li>
-            </ul>
-          </div>
-        </div>
+    <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div class="rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5">
+        <h4 class="font-semibold">VirtIO Disk</h4>
+        <ul class="mt-2 space-y-1 text-sm text-base-content/70">
+          <li>Use VirtIO-SCSI for best performance</li>
+          <li>Enable discard for SSD TRIM</li>
+          <li>Use raw format over qcow2</li>
+          <li>Enable I/O threads</li>
+        </ul>
+      </div>
+      <div class="rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5">
+        <h4 class="font-semibold">VirtIO Network</h4>
+        <ul class="mt-2 space-y-1 text-sm text-base-content/70">
+          <li>Use virtio-net driver</li>
+          <li>Enable multi-queue</li>
+          <li>Use virtio-net-pci</li>
+          <li>Consider vhost-net</li>
+        </ul>
       </div>
     </div>
+  </section>
 
-    <div class="divider"></div>
+  <!-- CPU Pinning -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">CPU Pinning</h3>
+    <p class="mt-2 text-sm/6 text-base-content/70">Pin VM vCPUs to physical cores for consistent performance:</p>
 
-    <!-- CPU Pinning -->
-    <div class="mt-8">
-      <h2 class="text-2xl font-bold mb-6">CPU Pinning</h2>
-      <p class="mb-4">Pin VM vCPUs to physical cores for consistent performance:</p>
-
-      <CodeBlock
-        code={`# View CPU topology
+    <CodeBlock
+      code={`# View CPU topology
 lscpu -e
 
 # Example: Pin 4 vCPUs to cores 4-7 (avoid core 0)
@@ -212,26 +164,21 @@ lscpu -e
   <vcpupin vcpu="3" cpuset="7"/>
   <emulatorpin cpuset="0-3"/>
 </cputune>`}
-        lang="bash"
-      />
+      lang="xml"
+    />
 
-      <div class="alert alert-info mt-4">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <span>Keep host processes on cores 0-3 and VM on cores 4+. This prevents scheduler conflicts.</span>
-      </div>
+    <div class="mt-4 rounded-xl bg-info/10 p-4 ring-1 ring-info/20">
+      <p class="text-sm">Keep host processes on cores 0-3 and VM on cores 4+. This prevents scheduler conflicts.</p>
     </div>
+  </section>
 
-    <div class="divider"></div>
+  <!-- Huge Pages -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">Huge Pages</h3>
+    <p class="mt-2 text-sm/6 text-base-content/70">Use 2MB huge pages for reduced TLB misses:</p>
 
-    <!-- Huge Pages -->
-    <div class="mt-8">
-      <h2 class="text-2xl font-bold mb-6">Huge Pages</h2>
-      <p class="mb-4">Use 2MB huge pages for reduced TLB misses:</p>
-
-      <CodeBlock
-        code={`# Reserve 8GB of huge pages (4096 x 2MB)
+    <CodeBlock
+      code={`# Reserve 8GB of huge pages (4096 x 2MB)
 echo 4096 | sudo tee /proc/sys/vm/nr_hugepages
 
 # Make persistent in /etc/sysctl.conf:
@@ -241,49 +188,42 @@ vm.nr_hugepages = 4096
 <memoryBacking>
   <hugepages/>
 </memoryBacking>`}
-        lang="bash"
-      />
-    </div>
+      lang="bash"
+    />
+  </section>
 
-    <!-- Benchmarks -->
-    <div class="mt-12">
-      <h2 class="text-2xl font-bold mb-6">Expected Benchmarks</h2>
+  <!-- Benchmarks -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">Expected Benchmarks</h3>
 
-      <div class="stats stats-vertical lg:stats-horizontal shadow-sm w-full bg-base-200">
-        <div class="stat">
-          <div class="stat-title">CPU (Cinebench)</div>
-          <div class="stat-value text-primary">~95%</div>
-          <div class="stat-desc">vs native Windows</div>
-        </div>
-        <div class="stat">
-          <div class="stat-title">Disk I/O</div>
-          <div class="stat-value text-secondary">~90%</div>
-          <div class="stat-desc">VirtIO-SCSI</div>
-        </div>
-        <div class="stat">
-          <div class="stat-title">Network</div>
-          <div class="stat-value text-accent">~95%</div>
-          <div class="stat-desc">virtio-net</div>
-        </div>
-        <div class="stat">
-          <div class="stat-title">GPU (passthrough)</div>
-          <div class="stat-value">~85%</div>
-          <div class="stat-desc">VFIO</div>
-        </div>
+    <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5 text-center">
+        <div class="text-2xl font-semibold text-primary">~95%</div>
+        <div class="mt-1 text-xs text-base-content/70">CPU (Cinebench)</div>
+      </div>
+      <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5 text-center">
+        <div class="text-2xl font-semibold text-secondary">~90%</div>
+        <div class="mt-1 text-xs text-base-content/70">Disk I/O</div>
+      </div>
+      <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5 text-center">
+        <div class="text-2xl font-semibold text-accent">~95%</div>
+        <div class="mt-1 text-xs text-base-content/70">Network</div>
+      </div>
+      <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5 text-center">
+        <div class="text-2xl font-semibold">~85%</div>
+        <div class="mt-1 text-xs text-base-content/70">GPU (VFIO)</div>
       </div>
     </div>
+  </section>
 
-    <!-- Next Steps -->
-    <div class="mt-12">
-      <div class="flex flex-wrap gap-4">
-        <a href={`${import.meta.env.BASE_URL}security`} class="btn btn-primary">
-          Security Hardening
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-          </svg>
-        </a>
-        <a href={`${import.meta.env.BASE_URL}installation`} class="btn btn-outline">Back to Installation</a>
-      </div>
+  <!-- Navigation -->
+  <section class="mt-12 fade-in">
+    <div class="flex flex-wrap gap-4">
+      <a href={`${import.meta.env.BASE_URL}security`} class="btn btn-primary">
+        Security Hardening
+        <span aria-hidden="true">&rarr;</span>
+      </a>
+      <a href={`${import.meta.env.BASE_URL}installation`} class="btn btn-ghost">Back to Installation</a>
     </div>
-  </div>
+  </section>
 </BaseLayout>

@@ -1,53 +1,32 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CodeBlock from '../components/CodeBlock.astro';
-import ProgressTracker from '../components/ProgressTracker.astro';
 ---
 
 <BaseLayout title="Installation" description="Complete QEMU/KVM installation guide for Windows 11 virtualization on Ubuntu 25.10">
-  <div class="max-w-4xl mx-auto">
-    <!-- Header -->
-    <div class="mb-8">
-      <div class="breadcrumbs text-sm mb-4">
-        <ul>
-          <li><a href={import.meta.env.BASE_URL}>Home</a></li>
-          <li>Installation</li>
-        </ul>
-      </div>
-      <h1 class="text-4xl font-bold mb-4">Installation Guide</h1>
-      <p class="text-lg text-base-content/70">
-        Complete setup guide for QEMU/KVM Windows 11 virtualization on Ubuntu 25.10
-      </p>
+  <!-- Header -->
+  <section class="fade-in">
+    <h2 class="font-display text-xl font-semibold text-base-content">Installation Guide</h2>
+    <p class="mt-2 text-sm/6 text-base-content/70">
+      Complete setup guide for QEMU/KVM Windows 11 virtualization on Ubuntu 25.10
+    </p>
+  </section>
+
+  <!-- Prerequisites Alert -->
+  <section class="mt-8 fade-in">
+    <div class="rounded-xl bg-info/10 p-4 ring-1 ring-info/20">
+      <h3 class="font-semibold text-info">Prerequisites</h3>
+      <p class="mt-1 text-sm text-base-content/70">CPU with VT-x/AMD-V + IOMMU &bull; 16GB+ RAM &bull; Ubuntu 25.10 &bull; NVMe SSD</p>
     </div>
+  </section>
 
-    <!-- Prerequisites Alert -->
-    <div class="alert alert-info mb-8">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-      </svg>
-      <div>
-        <h3 class="font-bold">Prerequisites</h3>
-        <div class="text-sm">CPU with VT-x/AMD-V + IOMMU • 16GB+ RAM • Ubuntu 25.10 • NVMe SSD</div>
-      </div>
-    </div>
+  <!-- Step 1 -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">Step 1: System Verification</h3>
+    <p class="mt-2 text-sm/6 text-base-content/70">First, verify your system supports hardware virtualization:</p>
 
-    <!-- Progress Tracker -->
-    <ProgressTracker
-      title="Installation Progress"
-      items={[
-        { label: "QEMU/KVM", value: 100, status: "success", description: "Ready to install" },
-        { label: "VirtIO Drivers", value: 100, status: "success", description: "Available" },
-        { label: "VM Created", value: 0, status: "warning", description: "Not started" },
-      ]}
-    />
-
-    <!-- Installation Steps -->
-    <div class="mt-12">
-      <h2 class="text-2xl font-bold mb-6">Step 1: System Verification</h2>
-      <p class="mb-4">First, verify your system supports hardware virtualization:</p>
-
-      <CodeBlock
-        code={`# Check CPU virtualization support
+    <CodeBlock
+      code={`# Check CPU virtualization support
 grep -cE '(vmx|svm)' /proc/cpuinfo
 # Output should be > 0 (number of CPU cores)
 
@@ -58,19 +37,18 @@ ls /sys/kernel/iommu_groups/
 # Check available RAM
 free -h
 # Minimum 16GB recommended`}
-        lang="bash"
-        filename="system-check.sh"
-      />
-    </div>
+      lang="bash"
+      filename="system-check.sh"
+    />
+  </section>
 
-    <div class="divider"></div>
+  <!-- Step 2 -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">Step 2: Install QEMU/KVM Packages</h3>
+    <p class="mt-2 text-sm/6 text-base-content/70">Install all required virtualization packages:</p>
 
-    <div class="mt-8">
-      <h2 class="text-2xl font-bold mb-6">Step 2: Install QEMU/KVM Packages</h2>
-      <p class="mb-4">Install all required virtualization packages:</p>
-
-      <CodeBlock
-        code={`# Clone the repository
+    <CodeBlock
+      code={`# Clone the repository
 git clone https://github.com/kairin/win-qemu.git
 cd win-qemu
 
@@ -84,75 +62,65 @@ sudo ./scripts/install-master.sh
 # - ovmf (UEFI firmware)
 # - swtpm (TPM 2.0 emulator)
 # - And 5 more packages...`}
-        lang="bash"
-        filename="install.sh"
-      />
+      lang="bash"
+      filename="install.sh"
+    />
 
-      <div class="alert alert-warning mt-4">
-        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <span><strong>Important:</strong> Reboot after installation for group membership changes to take effect.</span>
-      </div>
+    <div class="mt-4 rounded-xl bg-warning/10 p-4 ring-1 ring-warning/20">
+      <p class="text-sm"><strong>Important:</strong> Reboot after installation for group membership changes to take effect.</p>
     </div>
+  </section>
 
-    <div class="divider"></div>
+  <!-- Step 3 -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">Step 3: Verify Installation</h3>
 
-    <div class="mt-8">
-      <h2 class="text-2xl font-bold mb-6">Step 3: Verify Installation</h2>
-
-      <CodeBlock
-        code={`# After reboot, verify installation
+    <CodeBlock
+      code={`# After reboot, verify installation
 ./scripts/03-verify-installation.sh
 
 # Or manually check:
 virsh --version           # Should show version (e.g., 10.0.0)
 systemctl is-active libvirtd  # Should output: active
 groups | grep libvirt     # Should show: libvirt kvm`}
-        lang="bash"
-      />
+      lang="bash"
+    />
+  </section>
+
+  <!-- Step 4 -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">Step 4: Download Required ISOs</h3>
+
+    <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5">
+        <h4 class="font-semibold">Windows 11 ISO</h4>
+        <p class="mt-1 text-sm text-base-content/70">Download from Microsoft official site</p>
+        <span class="badge badge-primary badge-sm mt-2">~5.5 GB</span>
+      </div>
+      <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5">
+        <h4 class="font-semibold">VirtIO Drivers ISO</h4>
+        <p class="mt-1 text-sm text-base-content/70">Required for disk and network performance</p>
+        <span class="badge badge-secondary badge-sm mt-2">~753 MB</span>
+      </div>
     </div>
 
-    <div class="divider"></div>
-
-    <div class="mt-8">
-      <h2 class="text-2xl font-bold mb-6">Step 4: Download Required ISOs</h2>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div class="card bg-base-200">
-          <div class="card-body">
-            <h3 class="card-title text-lg">Windows 11 ISO</h3>
-            <p class="text-sm text-base-content/70">Download from Microsoft official site</p>
-            <div class="badge badge-primary">~5.5 GB</div>
-          </div>
-        </div>
-        <div class="card bg-base-200">
-          <div class="card-body">
-            <h3 class="card-title text-lg">VirtIO Drivers ISO</h3>
-            <p class="text-sm text-base-content/70">Required for disk and network performance</p>
-            <div class="badge badge-secondary">~753 MB</div>
-          </div>
-        </div>
-      </div>
-
-      <CodeBlock
-        code={`# Download VirtIO drivers
+    <CodeBlock
+      code={`# Download VirtIO drivers
 cd source-iso/
 wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso
 
 # Windows 11 ISO should be downloaded from:
 # https://www.microsoft.com/software-download/windows11`}
-        lang="bash"
-      />
-    </div>
+      lang="bash"
+    />
+  </section>
 
-    <div class="divider"></div>
+  <!-- Step 5 -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">Step 5: Create Windows 11 VM</h3>
 
-    <div class="mt-8">
-      <h2 class="text-2xl font-bold mb-6">Step 5: Create Windows 11 VM</h2>
-
-      <CodeBlock
-        code={`# Use the TUI menu
+    <CodeBlock
+      code={`# Use the TUI menu
 ./start.sh
 
 # Or create VM directly
@@ -164,29 +132,25 @@ wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-vir
 # - VirtIO disk (for performance)
 # - 8GB+ RAM allocation
 # - 4+ CPU cores`}
-        lang="bash"
-      />
-    </div>
+      lang="bash"
+    />
+  </section>
 
-    <!-- Next Steps -->
-    <div class="mt-12">
-      <h2 class="text-2xl font-bold mb-6">Next Steps</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <a href={`${import.meta.env.BASE_URL}performance`} class="card bg-base-200 hover:bg-base-300 transition-colors">
-          <div class="card-body">
-            <h3 class="card-title">Performance Optimization</h3>
-            <p class="text-sm text-base-content/70">Apply 14 Hyper-V enlightenments for 85-95% native performance</p>
-            <div class="badge badge-primary">Recommended</div>
-          </div>
-        </a>
-        <a href={`${import.meta.env.BASE_URL}security`} class="card bg-base-200 hover:bg-base-300 transition-colors">
-          <div class="card-body">
-            <h3 class="card-title">Security Hardening</h3>
-            <p class="text-sm text-base-content/70">Apply 60+ security hardening checklist items</p>
-            <div class="badge badge-secondary">Important</div>
-          </div>
-        </a>
-      </div>
+  <!-- Next Steps -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">Next Steps</h3>
+
+    <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+      <a href={`${import.meta.env.BASE_URL}performance`} class="group rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5 transition-all hover:ring-primary/30">
+        <h4 class="font-semibold">Performance Optimization</h4>
+        <p class="mt-1 text-sm text-base-content/70">Apply 14 Hyper-V enlightenments for 85-95% native performance</p>
+        <span class="badge badge-primary badge-sm mt-2">Recommended</span>
+      </a>
+      <a href={`${import.meta.env.BASE_URL}security`} class="group rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5 transition-all hover:ring-secondary/30">
+        <h4 class="font-semibold">Security Hardening</h4>
+        <p class="mt-1 text-sm text-base-content/70">Apply 60+ security hardening checklist items</p>
+        <span class="badge badge-secondary badge-sm mt-2">Important</span>
+      </a>
     </div>
-  </div>
+  </section>
 </BaseLayout>
