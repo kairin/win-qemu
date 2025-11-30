@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   site: 'https://kairin.github.io',
   base: '/win-qemu/',
-  outDir: '../docs-site',
+  outDir: '../docs',
   vite: {
     plugins: [tailwindcss()]
   }
