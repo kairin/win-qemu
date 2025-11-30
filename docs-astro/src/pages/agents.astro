@@ -1,0 +1,320 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CodeBlock from '../components/CodeBlock.astro';
+---
+
+<BaseLayout title="AI Agents" description="62-agent AI system for QEMU/KVM automation">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="breadcrumbs text-sm mb-4">
+        <ul>
+          <li><a href={import.meta.env.BASE_URL}>Home</a></li>
+          <li>AI Agents</li>
+        </ul>
+      </div>
+      <h1 class="text-4xl font-bold mb-4">AI Agent System</h1>
+      <p class="text-lg text-base-content/70">
+        62-agent 4-tier hierarchical system for complete workflow automation
+      </p>
+    </div>
+
+    <!-- Architecture Overview -->
+    <div class="alert mb-8">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info shrink-0 w-6 h-6">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <div>
+        <h3 class="font-bold">Cost Optimization: ~48% Token Reduction</h3>
+        <div class="text-sm">Opus for planning • Sonnet for coordination • Haiku for execution (80%+ tasks)</div>
+      </div>
+    </div>
+
+    <!-- 4-Tier Hierarchy -->
+    <div class="mt-8">
+      <h2 class="text-2xl font-bold mb-6">4-Tier Hierarchy</h2>
+
+      <!-- Tier 1 -->
+      <div class="collapse collapse-arrow bg-primary/10 mb-4">
+        <input type="checkbox" checked />
+        <div class="collapse-title text-xl font-medium">
+          <span class="badge badge-primary mr-2">Tier 1</span>
+          Strategic (Opus) - 1 Agent
+        </div>
+        <div class="collapse-content">
+          <div class="overflow-x-auto">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-mono">001</td>
+                  <td>orchestrator</td>
+                  <td>Strategic coordination, complex task decomposition</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tier 2 -->
+      <div class="collapse collapse-arrow bg-secondary/10 mb-4">
+        <input type="checkbox" checked />
+        <div class="collapse-title text-xl font-medium">
+          <span class="badge badge-secondary mr-2">Tier 2</span>
+          Domain Experts (Sonnet) - 10 Agents
+        </div>
+        <div class="collapse-content">
+          <div class="overflow-x-auto">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Role</th>
+                  <th>Children</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-mono">002</td>
+                  <td>vm-operations</td>
+                  <td>VM lifecycle management</td>
+                  <td><span class="badge badge-sm">02X</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">003</td>
+                  <td>performance</td>
+                  <td>Hyper-V, VirtIO tuning</td>
+                  <td><span class="badge badge-sm">03X</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">004</td>
+                  <td>security</td>
+                  <td>60+ checklist enforcement</td>
+                  <td><span class="badge badge-sm">04X</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">005</td>
+                  <td>virtiofs</td>
+                  <td>Filesystem sharing</td>
+                  <td><span class="badge badge-sm">05X</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">006</td>
+                  <td>automation</td>
+                  <td>QEMU guest agent</td>
+                  <td><span class="badge badge-sm">06X</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">007</td>
+                  <td>health</td>
+                  <td>System readiness</td>
+                  <td><span class="badge badge-sm">07X</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">008</td>
+                  <td>prerequisites</td>
+                  <td>Package installation</td>
+                  <td><span class="badge badge-sm">08X</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">009</td>
+                  <td>git</td>
+                  <td>Constitutional commits</td>
+                  <td><span class="badge badge-sm">09X</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">010</td>
+                  <td>docs</td>
+                  <td>Documentation sync</td>
+                  <td><span class="badge badge-sm">10X</span></td>
+                </tr>
+                <tr>
+                  <td class="font-mono">011</td>
+                  <td>cleanup</td>
+                  <td>Redundant file removal</td>
+                  <td><span class="badge badge-sm">11X</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tier 4 -->
+      <div class="collapse collapse-arrow bg-accent/10 mb-4">
+        <input type="checkbox" />
+        <div class="collapse-title text-xl font-medium">
+          <span class="badge badge-accent mr-2">Tier 4</span>
+          Task Executors (Haiku) - 51 Agents
+        </div>
+        <div class="collapse-content">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="card bg-base-200">
+              <div class="card-body py-4">
+                <h4 class="font-bold">02X VM Operations</h4>
+                <p class="text-sm text-base-content/70">create, configure, lifecycle, validate, snapshot</p>
+              </div>
+            </div>
+            <div class="card bg-base-200">
+              <div class="card-body py-4">
+                <h4 class="font-bold">03X Performance</h4>
+                <p class="text-sm text-base-content/70">Hyper-V, CPU pin, hugepages, I/O, benchmark</p>
+              </div>
+            </div>
+            <div class="card bg-base-200">
+              <div class="card-body py-4">
+                <h4 class="font-bold">04X Security</h4>
+                <p class="text-sm text-base-content/70">LUKS, firewall, BitLocker, virtio-fs RO, audit</p>
+              </div>
+            </div>
+            <div class="card bg-base-200">
+              <div class="card-body py-4">
+                <h4 class="font-bold">05X VirtIO-FS</h4>
+                <p class="text-sm text-base-content/70">setup, WinFsp, mount, PST test, troubleshoot</p>
+              </div>
+            </div>
+            <div class="card bg-base-200">
+              <div class="card-body py-4">
+                <h4 class="font-bold">06X Automation</h4>
+                <p class="text-sm text-base-content/70">GA install, virsh, polling, host-guest, scripts</p>
+              </div>
+            </div>
+            <div class="card bg-base-200">
+              <div class="card-body py-4">
+                <h4 class="font-bold">07X Health</h4>
+                <p class="text-sm text-base-content/70">hardware, QEMU stack, VirtIO, network, report</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Slash Commands -->
+    <div class="mt-8">
+      <h2 class="text-2xl font-bold mb-6">9 Slash Commands</h2>
+      <p class="mb-4">One-command workflows that orchestrate multiple agents:</p>
+
+      <div class="overflow-x-auto">
+        <table class="table table-zebra bg-base-200 rounded-sm">
+          <thead>
+            <tr>
+              <th>Command</th>
+              <th>Description</th>
+              <th>Agent Flow</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="font-mono text-primary">/guardian-health</td>
+              <td>System readiness validation (42 prerequisites)</td>
+              <td><span class="badge badge-xs">001</span>→<span class="badge badge-xs">007</span>→<span class="badge badge-xs">07X</span></td>
+            </tr>
+            <tr>
+              <td class="font-mono text-primary">/guardian-vm</td>
+              <td>Complete VM creation workflow</td>
+              <td><span class="badge badge-xs">001</span>→<span class="badge badge-xs">002</span>→<span class="badge badge-xs">02X</span></td>
+            </tr>
+            <tr>
+              <td class="font-mono text-primary">/guardian-optimize</td>
+              <td>Performance optimization (85-95% native)</td>
+              <td><span class="badge badge-xs">001</span>→<span class="badge badge-xs">003</span>→<span class="badge badge-xs">03X</span></td>
+            </tr>
+            <tr>
+              <td class="font-mono text-primary">/guardian-security</td>
+              <td>60+ security hardening checklist</td>
+              <td><span class="badge badge-xs">001</span>→<span class="badge badge-xs">004</span>→<span class="badge badge-xs">04X</span></td>
+            </tr>
+            <tr>
+              <td class="font-mono text-primary">/guardian-virtiofs</td>
+              <td>virtio-fs setup with read-only protection</td>
+              <td><span class="badge badge-xs">001</span>→<span class="badge badge-xs">005</span>→<span class="badge badge-xs">05X</span></td>
+            </tr>
+            <tr>
+              <td class="font-mono text-primary">/guardian-commit</td>
+              <td>Constitutional Git workflow</td>
+              <td><span class="badge badge-xs">001</span>→<span class="badge badge-xs">009</span>→<span class="badge badge-xs">09X</span></td>
+            </tr>
+            <tr>
+              <td class="font-mono text-primary">/guardian-backup</td>
+              <td>Encrypted backup creation</td>
+              <td><span class="badge badge-xs">001</span>→<span class="badge badge-xs">004</span>→<span class="badge badge-xs">046</span></td>
+            </tr>
+            <tr>
+              <td class="font-mono text-primary">/guardian-cleanup</td>
+              <td>Repository hygiene and redundancy</td>
+              <td><span class="badge badge-xs">001</span>→<span class="badge badge-xs">011</span>→<span class="badge badge-xs">11X</span></td>
+            </tr>
+            <tr>
+              <td class="font-mono text-primary">/guardian-documentation</td>
+              <td>Documentation sync and validation</td>
+              <td><span class="badge badge-xs">001</span>→<span class="badge badge-xs">010</span>→<span class="badge badge-xs">10X</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Agent Delegation Flow -->
+    <div class="mt-8">
+      <h2 class="text-2xl font-bold mb-6">Delegation Flow</h2>
+
+      <div class="mockup-code bg-base-300">
+        <pre data-prefix="1"><code>User Request</code></pre>
+        <pre data-prefix="2"><code>    ↓</code></pre>
+        <pre data-prefix="3" class="text-primary"><code>001-orchestrator (Opus) - Strategic decomposition</code></pre>
+        <pre data-prefix="4"><code>    ↓</code></pre>
+        <pre data-prefix="5" class="text-secondary"><code>00X-domain-expert (Sonnet) - Domain coordination</code></pre>
+        <pre data-prefix="6"><code>    ↓</code></pre>
+        <pre data-prefix="7" class="text-accent"><code>0XX-task-executor (Haiku) - Single task execution</code></pre>
+        <pre data-prefix="8"><code>    ↓</code></pre>
+        <pre data-prefix="9" class="text-success"><code>Result aggregation → User</code></pre>
+      </div>
+    </div>
+
+    <!-- Usage Example -->
+    <div class="mt-12">
+      <h2 class="text-2xl font-bold mb-6">Usage Example</h2>
+
+      <CodeBlock
+        code={`# Check system health
+/guardian-health
+
+# Output:
+# ✅ CPU: Intel i7-14700 (VT-x enabled)
+# ✅ RAM: 64GB (58GB available)
+# ✅ IOMMU: 16 groups detected
+# ✅ libvirtd: active
+# ✅ Network: default active
+#
+# Health Score: 42/42 prerequisites met`}
+        lang="bash"
+      />
+    </div>
+
+    <!-- Navigation -->
+    <div class="mt-12">
+      <div class="flex flex-wrap gap-4">
+        <a href={`${import.meta.env.BASE_URL}installation`} class="btn btn-primary">
+          Start Installation
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </a>
+        <a href={`${import.meta.env.BASE_URL}overview`} class="btn btn-outline">Project Overview</a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

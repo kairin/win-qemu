@@ -1,0 +1,149 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* ============================================================================
+   QEMU/KVM Documentation - Custom DaisyUI Themes
+
+   Design Philosophy:
+   - Dark Mode "nightowl": Deep purples with vibrant accents (dev-focused)
+   - Light Mode "sunrise": Warm, cheerful colors (approachable)
+   ============================================================================ */
+
+@theme {
+  /* Nightowl (Dark) Theme Colors */
+  --color-nightowl-primary: oklch(0.75 0.18 280);
+  --color-nightowl-secondary: oklch(0.70 0.15 200);
+  --color-nightowl-accent: oklch(0.80 0.20 320);
+  --color-nightowl-neutral: oklch(0.30 0.02 270);
+  --color-nightowl-base-100: oklch(0.15 0.03 270);
+  --color-nightowl-base-200: oklch(0.12 0.02 270);
+  --color-nightowl-base-300: oklch(0.10 0.02 270);
+  --color-nightowl-info: oklch(0.70 0.15 230);
+  --color-nightowl-success: oklch(0.70 0.18 150);
+  --color-nightowl-warning: oklch(0.80 0.18 85);
+  --color-nightowl-error: oklch(0.65 0.20 25);
+
+  /* Sunrise (Light) Theme Colors */
+  --color-sunrise-primary: oklch(0.60 0.20 30);
+  --color-sunrise-secondary: oklch(0.55 0.15 150);
+  --color-sunrise-accent: oklch(0.70 0.18 45);
+  --color-sunrise-neutral: oklch(0.40 0.02 60);
+  --color-sunrise-base-100: oklch(0.98 0.01 90);
+  --color-sunrise-base-200: oklch(0.95 0.02 85);
+  --color-sunrise-base-300: oklch(0.92 0.02 80);
+  --color-sunrise-info: oklch(0.55 0.15 230);
+  --color-sunrise-success: oklch(0.55 0.18 150);
+  --color-sunrise-warning: oklch(0.75 0.18 85);
+  --color-sunrise-error: oklch(0.55 0.20 25);
+}
+
+/* DaisyUI Theme Definitions */
+@plugin "daisyui/theme" {
+  name: "nightowl";
+  default: true;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: var(--color-nightowl-base-100);
+  --color-base-200: var(--color-nightowl-base-200);
+  --color-base-300: var(--color-nightowl-base-300);
+  --color-base-content: oklch(0.90 0.02 280);
+
+  --color-primary: var(--color-nightowl-primary);
+  --color-primary-content: oklch(0.15 0.02 280);
+
+  --color-secondary: var(--color-nightowl-secondary);
+  --color-secondary-content: oklch(0.15 0.02 200);
+
+  --color-accent: var(--color-nightowl-accent);
+  --color-accent-content: oklch(0.15 0.02 320);
+
+  --color-neutral: var(--color-nightowl-neutral);
+  --color-neutral-content: oklch(0.90 0.02 270);
+
+  --color-info: var(--color-nightowl-info);
+  --color-info-content: oklch(0.15 0.02 230);
+
+  --color-success: var(--color-nightowl-success);
+  --color-success-content: oklch(0.15 0.02 150);
+
+  --color-warning: var(--color-nightowl-warning);
+  --color-warning-content: oklch(0.15 0.02 85);
+
+  --color-error: var(--color-nightowl-error);
+  --color-error-content: oklch(0.98 0.02 25);
+
+  --rounded-box: 0.5rem;
+  --rounded-btn: 0.375rem;
+  --rounded-badge: 1rem;
+  --tab-radius: 0.375rem;
+}
+
+@plugin "daisyui/theme" {
+  name: "sunrise";
+  default: false;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: var(--color-sunrise-base-100);
+  --color-base-200: var(--color-sunrise-base-200);
+  --color-base-300: var(--color-sunrise-base-300);
+  --color-base-content: oklch(0.25 0.02 60);
+
+  --color-primary: var(--color-sunrise-primary);
+  --color-primary-content: oklch(0.98 0.01 30);
+
+  --color-secondary: var(--color-sunrise-secondary);
+  --color-secondary-content: oklch(0.98 0.01 150);
+
+  --color-accent: var(--color-sunrise-accent);
+  --color-accent-content: oklch(0.15 0.02 45);
+
+  --color-neutral: var(--color-sunrise-neutral);
+  --color-neutral-content: oklch(0.98 0.01 60);
+
+  --color-info: var(--color-sunrise-info);
+  --color-info-content: oklch(0.98 0.01 230);
+
+  --color-success: var(--color-sunrise-success);
+  --color-success-content: oklch(0.98 0.01 150);
+
+  --color-warning: var(--color-sunrise-warning);
+  --color-warning-content: oklch(0.15 0.02 85);
+
+  --color-error: var(--color-sunrise-error);
+  --color-error-content: oklch(0.98 0.01 25);
+
+  --rounded-box: 0.5rem;
+  --rounded-btn: 0.375rem;
+  --rounded-badge: 1rem;
+  --tab-radius: 0.375rem;
+}
+
+/* ============================================================================
+   Custom Utility Classes
+   ============================================================================ */
+
+/* Smooth theme transitions */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Code block styling */
+pre {
+  @apply overflow-x-auto rounded-sm;
+}
+
+code {
+  @apply font-mono text-sm;
+}
+
+/* Progress bar animation */
+.progress-animated {
+  animation: progress-pulse 2s ease-in-out infinite;
+}
+
+@keyframes progress-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}

@@ -1,0 +1,192 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CodeBlock from '../components/CodeBlock.astro';
+import ProgressTracker from '../components/ProgressTracker.astro';
+---
+
+<BaseLayout title="Installation" description="Complete QEMU/KVM installation guide for Windows 11 virtualization on Ubuntu 25.10">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="breadcrumbs text-sm mb-4">
+        <ul>
+          <li><a href={import.meta.env.BASE_URL}>Home</a></li>
+          <li>Installation</li>
+        </ul>
+      </div>
+      <h1 class="text-4xl font-bold mb-4">Installation Guide</h1>
+      <p class="text-lg text-base-content/70">
+        Complete setup guide for QEMU/KVM Windows 11 virtualization on Ubuntu 25.10
+      </p>
+    </div>
+
+    <!-- Prerequisites Alert -->
+    <div class="alert alert-info mb-8">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <div>
+        <h3 class="font-bold">Prerequisites</h3>
+        <div class="text-sm">CPU with VT-x/AMD-V + IOMMU • 16GB+ RAM • Ubuntu 25.10 • NVMe SSD</div>
+      </div>
+    </div>
+
+    <!-- Progress Tracker -->
+    <ProgressTracker
+      title="Installation Progress"
+      items={[
+        { label: "QEMU/KVM", value: 100, status: "success", description: "Ready to install" },
+        { label: "VirtIO Drivers", value: 100, status: "success", description: "Available" },
+        { label: "VM Created", value: 0, status: "warning", description: "Not started" },
+      ]}
+    />
+
+    <!-- Installation Steps -->
+    <div class="mt-12">
+      <h2 class="text-2xl font-bold mb-6">Step 1: System Verification</h2>
+      <p class="mb-4">First, verify your system supports hardware virtualization:</p>
+
+      <CodeBlock
+        code={`# Check CPU virtualization support
+grep -cE '(vmx|svm)' /proc/cpuinfo
+# Output should be > 0 (number of CPU cores)
+
+# Check IOMMU groups (required for GPU passthrough)
+ls /sys/kernel/iommu_groups/
+# Should show numbered directories (0, 1, 2, etc.)
+
+# Check available RAM
+free -h
+# Minimum 16GB recommended`}
+        lang="bash"
+        filename="system-check.sh"
+      />
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="mt-8">
+      <h2 class="text-2xl font-bold mb-6">Step 2: Install QEMU/KVM Packages</h2>
+      <p class="mb-4">Install all required virtualization packages:</p>
+
+      <CodeBlock
+        code={`# Clone the repository
+git clone https://github.com/kairin/win-qemu.git
+cd win-qemu
+
+# Run master installation script (requires sudo)
+sudo ./scripts/install-master.sh
+
+# This installs:
+# - qemu-kvm (virtualization engine)
+# - libvirt-daemon-system (management daemon)
+# - virt-manager (GUI management)
+# - ovmf (UEFI firmware)
+# - swtpm (TPM 2.0 emulator)
+# - And 5 more packages...`}
+        lang="bash"
+        filename="install.sh"
+      />
+
+      <div class="alert alert-warning mt-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span><strong>Important:</strong> Reboot after installation for group membership changes to take effect.</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="mt-8">
+      <h2 class="text-2xl font-bold mb-6">Step 3: Verify Installation</h2>
+
+      <CodeBlock
+        code={`# After reboot, verify installation
+./scripts/03-verify-installation.sh
+
+# Or manually check:
+virsh --version           # Should show version (e.g., 10.0.0)
+systemctl is-active libvirtd  # Should output: active
+groups | grep libvirt     # Should show: libvirt kvm`}
+        lang="bash"
+      />
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="mt-8">
+      <h2 class="text-2xl font-bold mb-6">Step 4: Download Required ISOs</h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="card bg-base-200">
+          <div class="card-body">
+            <h3 class="card-title text-lg">Windows 11 ISO</h3>
+            <p class="text-sm text-base-content/70">Download from Microsoft official site</p>
+            <div class="badge badge-primary">~5.5 GB</div>
+          </div>
+        </div>
+        <div class="card bg-base-200">
+          <div class="card-body">
+            <h3 class="card-title text-lg">VirtIO Drivers ISO</h3>
+            <p class="text-sm text-base-content/70">Required for disk and network performance</p>
+            <div class="badge badge-secondary">~753 MB</div>
+          </div>
+        </div>
+      </div>
+
+      <CodeBlock
+        code={`# Download VirtIO drivers
+cd source-iso/
+wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win.iso
+
+# Windows 11 ISO should be downloaded from:
+# https://www.microsoft.com/software-download/windows11`}
+        lang="bash"
+      />
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="mt-8">
+      <h2 class="text-2xl font-bold mb-6">Step 5: Create Windows 11 VM</h2>
+
+      <CodeBlock
+        code={`# Use the TUI menu
+./start.sh
+
+# Or create VM directly
+./scripts/create-vm.sh
+
+# VM Configuration:
+# - Q35 chipset with UEFI/OVMF
+# - TPM 2.0 (required for Windows 11)
+# - VirtIO disk (for performance)
+# - 8GB+ RAM allocation
+# - 4+ CPU cores`}
+        lang="bash"
+      />
+    </div>
+
+    <!-- Next Steps -->
+    <div class="mt-12">
+      <h2 class="text-2xl font-bold mb-6">Next Steps</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <a href={`${import.meta.env.BASE_URL}performance`} class="card bg-base-200 hover:bg-base-300 transition-colors">
+          <div class="card-body">
+            <h3 class="card-title">Performance Optimization</h3>
+            <p class="text-sm text-base-content/70">Apply 14 Hyper-V enlightenments for 85-95% native performance</p>
+            <div class="badge badge-primary">Recommended</div>
+          </div>
+        </a>
+        <a href={`${import.meta.env.BASE_URL}security`} class="card bg-base-200 hover:bg-base-300 transition-colors">
+          <div class="card-body">
+            <h3 class="card-title">Security Hardening</h3>
+            <p class="text-sm text-base-content/70">Apply 60+ security hardening checklist items</p>
+            <div class="badge badge-secondary">Important</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
