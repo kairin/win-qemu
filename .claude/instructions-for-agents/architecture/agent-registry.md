@@ -1,4 +1,4 @@
-# Agent Registry (60 Agents)
+# Agent Registry (72 Agents)
 
 [← Back to Index](../README.md) | [Delegation Guide](./agent-delegation.md)
 
@@ -9,8 +9,8 @@
 | Tier | Model | Count | Purpose |
 |------|-------|-------|---------|
 | 1 | Opus | 1 | Multi-agent orchestration |
-| 2 | Sonnet | 10 | Domain operations |
-| 4 | Haiku | 49 | Atomic execution |
+| 2 | Sonnet | 11 | Domain operations |
+| 4 | Haiku | 60 | Atomic execution |
 
 ---
 
@@ -36,10 +36,11 @@
 | **009-git** | Git operations | 091-095 (5) | No |
 | **010-docs** | Documentation | 101-105 (5) | Yes |
 | **011-cleanup** | Repository hygiene | 111-114 (4) | Yes |
+| **012-astro** | Astro.build/GitHub Pages | 121-126, 122-* (11) | Yes |
 
 ---
 
-## Tier 4: Haiku Execution Agents (49 total)
+## Tier 4: Haiku Execution Agents (60 total)
 
 ### 02X VM Operations (Parent: 002-vm-operations)
 | Agent | Task | Parallel-Safe |
@@ -132,6 +133,25 @@
 | 113-archive-obsolete | Archive obsolete docs | No |
 | 114-metrics-report | Cleanup impact metrics | Yes |
 
+### 121-* Astro Build (Parent: 012-astro)
+| Agent | Task | Parallel-Safe |
+|-------|------|---------------|
+| 121-precheck | Verify Astro project structure | Yes |
+| 121-build | Execute npm run build | No |
+| 121-validate | Validate build output | Yes |
+| 121-nojekyll | Create/verify .nojekyll (CRITICAL) | Yes |
+| 121-metrics | Build size/page metrics | Yes |
+| 121-config-check | Verify astro.config.mjs | Yes |
+
+### 122-* Deployment (Parent: 012-astro)
+| Agent | Task | Parallel-Safe |
+|-------|------|---------------|
+| 122-git-sync | Sync docs/ with git staging | Yes |
+| 122-deploy-verify | Verify GitHub Pages deployment | Yes |
+| 122-asset-check | Check _astro/ assets accessible | Yes |
+| 122-url-test | Test all page URLs return 200 | Yes |
+| 122-rollback | Revert docs/ if deploy fails | No |
+
 ---
 
 ## Parent-Child Summary
@@ -147,10 +167,11 @@
 ├── 008-prerequisites ────→ 081-085 (5 Haiku)
 ├── 009-git ──────────────→ 091-095 (5 Haiku)
 ├── 010-docs ─────────────→ 101-105 (5 Haiku)
-└── 011-cleanup ──────────→ 111-114 (4 Haiku)
+├── 011-cleanup ──────────→ 111-114 (4 Haiku)
+└── 012-astro ────────────→ 121-*, 122-* (11 Haiku)
 ```
 
-**Total**: 1 Opus + 10 Sonnet + 49 Haiku = **60 agents**
+**Total**: 1 Opus + 11 Sonnet + 60 Haiku = **72 agents**
 
 ---
 

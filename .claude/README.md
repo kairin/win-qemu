@@ -23,6 +23,7 @@ Run native Microsoft 365 Outlook on Ubuntu 25.10 with **85-95% native performanc
 | Git operations | 009-git | Sonnet | Automatic via orchestrator |
 | Documentation | 010-docs | Sonnet | Automatic via orchestrator |
 | Cleanup | 011-cleanup | Sonnet | Automatic via orchestrator |
+| **Astro/GitHub Pages** | **012-astro** | Sonnet | Automatic via orchestrator |
 
 ---
 
@@ -39,15 +40,16 @@ Run native Microsoft 365 Outlook on Ubuntu 25.10 with **85-95% native performanc
 | `/guardian-virtiofs` | virtio-fs host setup + VM config + read-only enforcement |
 | `/guardian-cleanup` | Repository hygiene with redundancy detection |
 | `/guardian-documentation` | Doc verification, symlink restoration, SSoT validation |
+| `/guardian-deploy` | Astro build + GitHub Pages deployment + .nojekyll verification |
 
 ---
 
-## Agent Hierarchy (62 agents)
+## Agent Hierarchy (72 agents)
 
 ```
 001-orchestrator (Opus - Strategic Coordination)
 │
-├── Tier 2 Specialists (10 Sonnet agents)
+├── Tier 2 Specialists (11 Sonnet agents)
 │   ├── 002-vm-operations    → 021-025 (VM create, configure, lifecycle, XML, snapshot)
 │   ├── 003-performance      → 031-035 (Hyper-V, CPU pin, hugepages, I/O, benchmark)
 │   ├── 004-security         → 041-046 (LUKS, firewall, BitLocker, virtio-fs RO, audit, backup)
@@ -57,9 +59,10 @@ Run native Microsoft 365 Outlook on Ubuntu 25.10 with **85-95% native performanc
 │   ├── 008-prerequisites    → 081-085 (packages, groups, libvirtd, VirtIO ISO, Windows ISO)
 │   ├── 009-git              → 091-095 (branch, validate, commit, merge, push)
 │   ├── 010-docs             → 101-105 (symlink verify, restore, merge, size, links)
-│   └── 011-cleanup          → 111-114 (redundancy, scripts, archive, metrics)
+│   ├── 011-cleanup          → 111-114 (redundancy, scripts, archive, metrics)
+│   └── 012-astro            → 121-*, 122-* (precheck, build, validate, nojekyll, deploy)
 │
-└── Tier 4 Execution (49 Haiku atomic agents)
+└── Tier 4 Execution (60 Haiku atomic agents)
     └── Single-task specialists for parallel execution
 ```
 
@@ -90,16 +93,18 @@ Run native Microsoft 365 Outlook on Ubuntu 25.10 with **85-95% native performanc
 .claude/
 ├── README.md                    # This file (quick reference)
 ├── settings.local.json          # MCP permissions & configuration
-├── agents/                      # 62 agent definitions
+├── agents/                      # 72 agent definitions
 │   ├── 001-orchestrator.md      # Tier 1 (Opus)
-│   ├── 002-011-*.md             # Tier 2 (Sonnet specialists)
-│   └── 021-114-*.md             # Tier 4 (Haiku atomic)
-├── commands/                    # 9 Guardian slash commands
+│   ├── 002-012-*.md             # Tier 2 (Sonnet specialists)
+│   └── 021-122-*.md             # Tier 4 (Haiku atomic)
+├── commands/                    # 10 Guardian slash commands
 │   └── guardian-*.md
+├── rules-tailwindcss/           # Tailwind CSS v4 rules
+│   └── tailwind.md
 └── instructions-for-agents/     # Modular documentation
     ├── architecture/            # Agent registry, delegation
     ├── requirements/            # Constitutional rules, git workflow
-    └── guides/                  # Security checklist, Hyper-V, benchmarks
+    └── guides/                  # Security checklist, deployment, benchmarks
 ```
 
 ---
@@ -116,6 +121,7 @@ Run native Microsoft 365 Outlook on Ubuntu 25.10 with **85-95% native performanc
 
 ## Version
 
-- **Agents**: 62 total (1 Opus + 10 Sonnet + 49 Haiku)
-- **Commands**: 9 Guardian slash commands
+- **Agents**: 72 total (1 Opus + 11 Sonnet + 60 Haiku)
+- **Commands**: 10 Guardian slash commands
+- **Rules**: Tailwind CSS v4 + DaisyUI
 - **Last Updated**: 2025-11-30
