@@ -5,8 +5,8 @@ import tailwindcss from '@tailwindcss/vite';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://kairin.github.io',
-  base: '/win-qemu-docs/',
-  outDir: 'dist',
+  base: '/win-qemu/',
+  outDir: '../docs-site',
   vite: {
     plugins: [tailwindcss()]
   }
