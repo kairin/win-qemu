@@ -1,0 +1,157 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Overview" description="Project overview for QEMU/KVM Windows 11 virtualization">
+  <!-- Mission Statement -->
+  <section class="fade-in">
+    <h2 class="font-display text-xl font-semibold text-base-content">Mission</h2>
+    <p class="mt-4 text-sm/6 text-base-content/70">
+      Enable professional Windows 11 virtualization on Ubuntu 25.10 using QEMU/KVM,
+      achieving <strong class="text-primary">85-95% native performance</strong> with
+      enterprise-grade security and complete automation.
+    </p>
+  </section>
+
+  <!-- Project Stats -->
+  <section class="mt-12 fade-in">
+    <h2 class="font-display text-xl font-semibold text-base-content">Project Statistics</h2>
+
+    <div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5 text-center">
+        <div class="text-2xl font-semibold text-primary">24</div>
+        <div class="mt-1 text-sm text-base-content/70">Shell Scripts</div>
+      </div>
+      <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5 text-center">
+        <div class="text-2xl font-semibold text-secondary">14</div>
+        <div class="mt-1 text-sm text-base-content/70">Hyper-V Enlightenments</div>
+      </div>
+      <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5 text-center">
+        <div class="text-2xl font-semibold text-accent">60+</div>
+        <div class="mt-1 text-sm text-base-content/70">Security Checks</div>
+      </div>
+      <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5 text-center">
+        <div class="text-2xl font-semibold">85-95%</div>
+        <div class="mt-1 text-sm text-base-content/70">Native Performance</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture -->
+  <section class="mt-12 fade-in">
+    <h2 class="font-display text-xl font-semibold text-base-content">Technical Architecture</h2>
+
+    <div class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div class="rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5">
+        <span class="badge badge-primary badge-sm">Host</span>
+        <h3 class="mt-3 font-display font-semibold">Ubuntu 25.10</h3>
+        <ul class="mt-3 space-y-1 text-sm text-base-content/70">
+          <li>Kernel 6.17.0-7-generic</li>
+          <li>NVIDIA RTX 3060 (GPU workloads)</li>
+          <li>64GB DDR5 RAM</li>
+          <li>Intel i7-14700</li>
+        </ul>
+      </div>
+
+      <div class="rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5">
+        <span class="badge badge-secondary badge-sm">Guest</span>
+        <h3 class="mt-3 font-display font-semibold">Windows 11 Pro</h3>
+        <ul class="mt-3 space-y-1 text-sm text-base-content/70">
+          <li>Q35 chipset + UEFI</li>
+          <li>Intel UHD 770 (passthrough)</li>
+          <li>8-16GB allocated RAM</li>
+          <li>VirtIO drivers</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Key Technologies -->
+  <section class="mt-12 fade-in">
+    <h2 class="font-display text-xl font-semibold text-base-content">Key Technologies</h2>
+
+    <div class="mt-6 overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="border-b border-base-content/10">
+            <th class="py-2 pr-4 font-semibold">Technology</th>
+            <th class="py-2 pr-4 font-semibold">Purpose</th>
+            <th class="py-2 font-semibold">Status</th>
+          </tr>
+        </thead>
+        <tbody class="text-base-content/80">
+          <tr class="border-b border-base-content/5">
+            <td class="py-3 pr-4 font-medium">QEMU/KVM</td>
+            <td class="py-3 pr-4">Hardware-accelerated virtualization</td>
+            <td class="py-3"><span class="badge badge-success badge-sm">Ready</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-3 pr-4 font-medium">VirtIO</td>
+            <td class="py-3 pr-4">High-performance I/O (disk, network)</td>
+            <td class="py-3"><span class="badge badge-success badge-sm">Ready</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-3 pr-4 font-medium">Hyper-V Enlightenments</td>
+            <td class="py-3 pr-4">14 Windows-specific optimizations</td>
+            <td class="py-3"><span class="badge badge-success badge-sm">Ready</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-3 pr-4 font-medium">virtio-fs</td>
+            <td class="py-3 pr-4">Host filesystem sharing</td>
+            <td class="py-3"><span class="badge badge-success badge-sm">Ready</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-3 pr-4 font-medium">VFIO GPU Passthrough</td>
+            <td class="py-3 pr-4">Intel iGPU to Windows VM</td>
+            <td class="py-3"><span class="badge badge-info badge-sm">Planned</span></td>
+          </tr>
+          <tr>
+            <td class="py-3 pr-4 font-medium">IOMMU/VT-d</td>
+            <td class="py-3 pr-4">Device isolation (16 groups)</td>
+            <td class="py-3"><span class="badge badge-success badge-sm">Enabled</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Use Cases -->
+  <section class="mt-12 fade-in">
+    <h2 class="font-display text-xl font-semibold text-base-content">Use Cases</h2>
+
+    <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div class="rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5">
+        <span class="badge badge-primary badge-sm">Primary</span>
+        <h3 class="mt-3 font-display font-semibold">Microsoft 365</h3>
+        <p class="mt-2 text-sm text-base-content/70">
+          Native Outlook desktop for professional email and calendar management
+        </p>
+      </div>
+      <div class="rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5">
+        <span class="badge badge-secondary badge-sm">Secondary</span>
+        <h3 class="mt-3 font-display font-semibold">Windows Apps</h3>
+        <p class="mt-2 text-sm text-base-content/70">
+          Run Windows-only applications with full hardware acceleration
+        </p>
+      </div>
+      <div class="rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5">
+        <span class="badge badge-accent badge-sm">Development</span>
+        <h3 class="mt-3 font-display font-semibold">Testing</h3>
+        <p class="mt-2 text-sm text-base-content/70">
+          Cross-platform development and testing environment
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Navigation -->
+  <section class="mt-12 fade-in">
+    <div class="flex flex-wrap gap-4">
+      <a href={`${import.meta.env.BASE_URL}installation`} class="btn btn-primary">
+        Installation Guide
+        <span aria-hidden="true">&rarr;</span>
+      </a>
+      <a href={`${import.meta.env.BASE_URL}performance`} class="btn btn-ghost">View Performance</a>
+    </div>
+  </section>
+</BaseLayout>

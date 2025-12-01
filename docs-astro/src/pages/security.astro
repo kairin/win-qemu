@@ -1,0 +1,231 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CodeBlock from '../components/CodeBlock.astro';
+---
+
+<BaseLayout title="Security" description="Security hardening guide for QEMU/KVM Windows 11 virtualization">
+  <!-- Header -->
+  <section class="fade-in">
+    <h2 class="font-display text-xl font-semibold text-base-content">Security Hardening</h2>
+    <p class="mt-2 text-sm/6 text-base-content/70">
+      60+ security checklist items for production-grade VM security
+    </p>
+  </section>
+
+  <!-- Warning Alert -->
+  <section class="mt-8 fade-in">
+    <div class="rounded-xl bg-error/10 p-4 ring-1 ring-error/20">
+      <h3 class="font-semibold text-error">Critical: Read-Only Mounts</h3>
+      <p class="mt-1 text-sm text-base-content/70">Always use read-only virtio-fs mounts to prevent ransomware from encrypting host files.</p>
+    </div>
+  </section>
+
+  <!-- Security Categories -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">Security Categories</h3>
+
+    <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div class="rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5 text-center">
+        <div class="text-3xl">&#128274;</div>
+        <h4 class="mt-2 font-semibold">Encryption</h4>
+        <p class="mt-1 text-sm text-base-content/70">LUKS, BitLocker, TLS</p>
+        <span class="badge badge-primary badge-sm mt-2">15 items</span>
+      </div>
+      <div class="rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5 text-center">
+        <div class="text-3xl">&#128737;</div>
+        <h4 class="mt-2 font-semibold">Network</h4>
+        <p class="mt-1 text-sm text-base-content/70">UFW, M365 whitelist</p>
+        <span class="badge badge-secondary badge-sm mt-2">20 items</span>
+      </div>
+      <div class="rounded-xl bg-base-200 p-5 ring-1 ring-base-content/5 text-center">
+        <div class="text-3xl">&#128193;</div>
+        <h4 class="mt-2 font-semibold">Filesystem</h4>
+        <p class="mt-1 text-sm text-base-content/70">Read-only, permissions</p>
+        <span class="badge badge-accent badge-sm mt-2">25 items</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- LUKS Encryption -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">1. LUKS Encryption for VM Storage</h3>
+    <p class="mt-2 text-sm/6 text-base-content/70">Encrypt VM disk images to protect data at rest:</p>
+
+    <CodeBlock
+      code={`# Create LUKS encrypted container for VM storage
+sudo cryptsetup luksFormat /dev/sdX
+sudo cryptsetup open /dev/sdX vm-storage
+
+# Create filesystem
+sudo mkfs.ext4 /dev/mapper/vm-storage
+
+# Mount and set permissions
+sudo mount /dev/mapper/vm-storage /var/lib/libvirt/images
+sudo chown -R libvirt-qemu:kvm /var/lib/libvirt/images`}
+      lang="bash"
+      filename="luks-setup.sh"
+    />
+  </section>
+
+  <!-- UFW Firewall -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">2. UFW Firewall with M365 Whitelist</h3>
+    <p class="mt-2 text-sm/6 text-base-content/70">Configure firewall to only allow Microsoft 365 traffic:</p>
+
+    <CodeBlock
+      code={`# Enable UFW
+sudo ufw enable
+sudo ufw default deny outgoing
+sudo ufw default deny incoming
+
+# Allow Microsoft 365 IP ranges (example)
+# Full list: https://docs.microsoft.com/microsoft-365/enterprise/urls-and-ip-address-ranges
+
+# Outlook
+sudo ufw allow out to 52.96.0.0/14 port 443
+sudo ufw allow out to 40.96.0.0/13 port 443
+
+# OneDrive
+sudo ufw allow out to 13.107.136.0/22 port 443
+
+# Teams
+sudo ufw allow out to 52.112.0.0/14 port 443
+
+# DNS (required)
+sudo ufw allow out to any port 53
+
+# Check status
+sudo ufw status verbose`}
+      lang="bash"
+      filename="ufw-m365.sh"
+    />
+  </section>
+
+  <!-- virtio-fs Read-Only -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">3. virtio-fs Read-Only Protection</h3>
+
+    <div class="mt-4 rounded-xl bg-error/10 p-4 ring-1 ring-error/20">
+      <p class="text-sm"><strong>CRITICAL:</strong> Never use read-write mounts for shared folders. Ransomware in the VM can encrypt host files!</p>
+    </div>
+
+    <CodeBlock
+      code={`# Configure virtio-fs daemon with read-only
+/usr/libexec/virtiofsd \\
+  --socket-path=/var/run/virtiofs/vm.sock \\
+  --shared-dir=/home/user/shared \\
+  --sandbox none \\
+  --cache auto \\
+  --readonly  # CRITICAL: Always use this flag!
+
+# In VM XML:
+<filesystem type='mount' accessmode='passthrough'>
+  <driver type='virtiofs' queue='1024'/>
+  <source dir='/home/user/shared'/>
+  <target dir='shared'/>
+  <readonly/>  <!-- Enforce read-only -->
+</filesystem>`}
+      lang="bash"
+      filename="virtiofs-readonly.sh"
+    />
+  </section>
+
+  <!-- Security Checklist -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">Security Checklist</h3>
+
+    <div class="mt-4 overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="border-b border-base-content/10">
+            <th class="py-2 pr-4 font-semibold">Category</th>
+            <th class="py-2 pr-4 font-semibold">Item</th>
+            <th class="py-2 font-semibold">Priority</th>
+          </tr>
+        </thead>
+        <tbody class="text-base-content/80">
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">Encryption</td>
+            <td class="py-2 pr-4">LUKS for VM storage</td>
+            <td class="py-2"><span class="badge badge-error badge-xs">Critical</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">Encryption</td>
+            <td class="py-2 pr-4">BitLocker in Windows guest</td>
+            <td class="py-2"><span class="badge badge-warning badge-xs">High</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">Network</td>
+            <td class="py-2 pr-4">UFW firewall enabled</td>
+            <td class="py-2"><span class="badge badge-error badge-xs">Critical</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">Network</td>
+            <td class="py-2 pr-4">M365 IP whitelist only</td>
+            <td class="py-2"><span class="badge badge-warning badge-xs">High</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">Filesystem</td>
+            <td class="py-2 pr-4">virtio-fs read-only</td>
+            <td class="py-2"><span class="badge badge-error badge-xs">Critical</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">Filesystem</td>
+            <td class="py-2 pr-4">Restricted shared folder paths</td>
+            <td class="py-2"><span class="badge badge-warning badge-xs">High</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">Access</td>
+            <td class="py-2 pr-4">Non-root VM execution</td>
+            <td class="py-2"><span class="badge badge-warning badge-xs">High</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">Access</td>
+            <td class="py-2 pr-4">libvirt group membership only</td>
+            <td class="py-2"><span class="badge badge-info badge-xs">Medium</span></td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">Backup</td>
+            <td class="py-2 pr-4">Encrypted backup rotation</td>
+            <td class="py-2"><span class="badge badge-warning badge-xs">High</span></td>
+          </tr>
+          <tr>
+            <td class="py-2 pr-4">Monitoring</td>
+            <td class="py-2 pr-4">VM resource limits</td>
+            <td class="py-2"><span class="badge badge-info badge-xs">Medium</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Run Security Audit -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">Run Security Audit</h3>
+
+    <CodeBlock
+      code={`# Run full security audit
+./scripts/configure-security.sh --audit
+
+# This checks:
+# - LUKS encryption status
+# - UFW firewall rules
+# - virtio-fs mount permissions
+# - File permissions
+# - Network exposure
+# - Backup encryption`}
+      lang="bash"
+    />
+  </section>
+
+  <!-- Navigation -->
+  <section class="mt-12 fade-in">
+    <div class="flex flex-wrap gap-4">
+      <a href={`${import.meta.env.BASE_URL}changelog`} class="btn btn-primary">
+        View Changelog
+        <span aria-hidden="true">&rarr;</span>
+      </a>
+      <a href={`${import.meta.env.BASE_URL}performance`} class="btn btn-ghost">Back to Performance</a>
+    </div>
+  </section>
+</BaseLayout>

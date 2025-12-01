@@ -1,0 +1,235 @@
+---
+import '../styles/app.css';
+import StarField from '../components/StarField.astro';
+import SearchModal from '../components/SearchModal.astro';
+import Timeline from '../components/Timeline.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'QEMU/KVM Windows 11 Virtualization Documentation' } = Astro.props;
+
+const navItems = [
+  { href: 'overview', label: 'Overview' },
+  { href: 'installation', label: 'Installation' },
+  { href: 'performance', label: 'Performance' },
+  { href: 'security', label: 'Security' },
+  { href: 'changelog', label: 'Changelog' },
+];
+---
+
+<!doctype html>
+<html lang="en" data-theme="nightowl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://kairin.github.io/win-qemu/" />
+    <meta property="og:title" content="QEMU/KVM Windows 11 Virtualization" />
+    <meta property="og:description" content="Run Windows 11 on Ubuntu with 85-95% native performance using QEMU/KVM, VirtIO, and Hyper-V enlightenments." />
+    <meta property="og:image" content="https://kairin.github.io/win-qemu/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="QEMU/KVM Windows 11 Virtualization" />
+    <meta name="twitter:description" content="Run Windows 11 on Ubuntu with 85-95% native performance using QEMU/KVM, VirtIO, and Hyper-V enlightenments." />
+    <meta name="twitter:image" content="https://kairin.github.io/win-qemu/og-image.png" />
+
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <title>{title} | QEMU/KVM Docs</title>
+
+    <!-- Theme toggle script (runs before paint to prevent flash) -->
+    <script is:inline>
+      const theme = localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: light)').matches ? 'sunrise' : 'nightowl');
+      document.documentElement.setAttribute('data-theme', theme);
+    </script>
+  </head>
+  <body class="min-h-dvh bg-base-100 text-base-content antialiased">
+    <!-- Two-column layout wrapper -->
+    <div class="lg:flex">
+      <!-- Fixed Sidebar -->
+      <aside class="relative flex-none overflow-hidden px-6 lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex lg:px-0">
+        <!-- Glow effect background -->
+        <div class="absolute inset-0 -z-10 overflow-hidden bg-base-300 lg:right-[calc(max(2rem,50%-38rem)+40rem)] lg:min-w-[32rem]">
+          <svg
+            class="absolute -bottom-48 left-[-40%] h-[80rem] w-[180%] lg:top-[-40%] lg:-right-40 lg:bottom-auto lg:left-auto lg:h-[180%] lg:w-[112rem]"
+            aria-hidden="true"
+          >
+            <defs>
+              <radialGradient id="glow-desktop" cx="100%">
+                <stop offset="0%" stop-color="oklch(0.75 0.18 280 / 0.3)" />
+                <stop offset="53.95%" stop-color="oklch(0.70 0.15 200 / 0.09)" />
+                <stop offset="100%" stop-color="transparent" />
+              </radialGradient>
+              <radialGradient id="glow-mobile" cy="100%">
+                <stop offset="0%" stop-color="oklch(0.75 0.18 280 / 0.3)" />
+                <stop offset="53.95%" stop-color="oklch(0.70 0.15 200 / 0.09)" />
+                <stop offset="100%" stop-color="transparent" />
+              </radialGradient>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#glow-desktop)" class="hidden lg:block" />
+            <rect width="100%" height="100%" fill="url(#glow-mobile)" class="lg:hidden" />
+          </svg>
+          <div class="absolute inset-x-0 right-0 bottom-0 h-px bg-base-content/10 mix-blend-overlay lg:top-0 lg:left-auto lg:h-auto lg:w-px" />
+        </div>
+
+        <!-- Sidebar content -->
+        <div class="relative flex w-full lg:pointer-events-auto lg:mr-[calc(max(2rem,50%-38rem)+40rem)] lg:min-w-[32rem] lg:overflow-x-hidden lg:overflow-y-auto lg:pl-[max(4rem,calc(50%-38rem))]">
+          <div class="mx-auto max-w-lg lg:mx-0 lg:flex lg:w-96 lg:max-w-none lg:flex-col lg:before:flex-1 lg:before:pt-6">
+            <div class="pt-20 pb-16 sm:pt-32 sm:pb-20 lg:py-20">
+              <div class="relative">
+                <!-- Star field animation -->
+                <StarField class="top-14 -right-44 hidden lg:block" />
+
+                <!-- Logo -->
+                <div>
+                  <a href={import.meta.env.BASE_URL} class="inline-block">
+                    <span class="font-display text-2xl font-bold">
+                      <span class="text-primary">QEMU</span><span class="text-secondary">/KVM</span>
+                    </span>
+                  </a>
+                </div>
+
+                <!-- Main title -->
+                <h1 class="mt-14 font-display text-4xl/tight font-light text-base-content">
+                  Windows 11 on Ubuntu{' '}
+                  <span class="text-primary">with near-native performance</span>
+                </h1>
+
+                <!-- Description -->
+                <p class="mt-4 text-sm/6 text-base-content/70">
+                  Run native Microsoft 365 Outlook on Ubuntu 25.10 with <strong class="text-base-content">85-95% native performance</strong>.
+                  VirtIO drivers, 14 Hyper-V enlightenments, and 60+ security hardening checks.
+                </p>
+
+                <!-- CTA buttons -->
+                <div class="mt-8 flex flex-wrap gap-x-4 gap-y-3">
+                  <a
+                    href={`${import.meta.env.BASE_URL}installation`}
+                    class="btn btn-primary btn-sm"
+                  >
+                    Get Started
+                    <span aria-hidden="true">&rarr;</span>
+                  </a>
+                  <a
+                    href="https://github.com/kairin/win-qemu"
+                    class="btn btn-ghost btn-sm"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    GitHub
+                  </a>
+                </div>
+
+                <!-- Navigation links -->
+                <div class="mt-8 flex flex-wrap gap-x-1 gap-y-3 sm:gap-x-2 lg:justify-start">
+                  {navItems.map(item => (
+                    <a
+                      href={`${import.meta.env.BASE_URL}${item.href}`}
+                      class="icon-link px-2 py-1"
+                    >
+                      {item.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex flex-1 items-end justify-center pb-4 lg:justify-start lg:pb-6">
+              <p class="flex items-baseline gap-x-2 text-[0.8125rem]/6 text-base-content/50">
+                Built with
+                <a href="https://astro.build" class="icon-link" target="_blank" rel="noopener">
+                  Astro
+                </a>
+                +
+                <a href="https://tailwindcss.com" class="icon-link" target="_blank" rel="noopener">
+                  TailwindCSS
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Timeline with scroll-linked marker -->
+      <Timeline />
+
+      <!-- Theme toggle (fixed position) -->
+      <button
+        type="button"
+        class="group fixed top-4 right-4 z-50 -m-2.5 p-2.5"
+        id="theme-toggle-btn"
+        aria-label="Toggle theme"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="h-6 w-6 fill-base-content opacity-50 transition-opacity group-hover:opacity-100">
+          <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm-5-8a5 5 0 0 0 5 5V7a5 5 0 0 0-5 5Z"
+          />
+        </svg>
+      </button>
+
+      <!-- Search button (fixed position) -->
+      <button
+        type="button"
+        class="group fixed top-4 right-16 z-50 -m-2.5 p-2.5"
+        id="search-btn"
+        aria-label="Search"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 fill-none stroke-base-content opacity-50 transition-opacity group-hover:opacity-100" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </button>
+
+      <!-- Main content area -->
+      <main class="relative flex-auto lg:ml-[calc(max(2rem,50%-38rem)+40rem)]">
+        <div class="px-6 py-20 sm:py-32 lg:px-8">
+          <div class="mx-auto max-w-2xl lg:max-w-4xl">
+            <slot />
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Search Modal -->
+    <SearchModal />
+
+    <!-- Theme toggle script -->
+    <script>
+      const toggleBtn = document.getElementById('theme-toggle-btn');
+      const html = document.documentElement;
+
+      toggleBtn?.addEventListener('click', () => {
+        const currentTheme = html.getAttribute('data-theme');
+        const newTheme = currentTheme === 'nightowl' ? 'sunrise' : 'nightowl';
+        html.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+      });
+
+      // Listen for system theme changes
+      window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('theme')) {
+          const newTheme = e.matches ? 'sunrise' : 'nightowl';
+          html.setAttribute('data-theme', newTheme);
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -118,6 +118,7 @@ __pycache__/
 # Build artifacts
 /build/
 /dist/
+# /docs/  # NOT ignored: needed for GitHub Pages deployment (output from docs-astro build)
 
 # Installation state (contains timestamps, system-specific data)
 .installation-state/

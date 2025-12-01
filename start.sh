@@ -30,10 +30,11 @@ readonly COLOR_ERROR=196        # Red
 readonly COLOR_INFO=57          # Blue
 readonly COLOR_MUTED=240        # Gray
 
-# Directories
-readonly STATE_DIR=".installation-state"
-readonly CONFIG_DIR="configs"
-readonly SCRIPT_DIR="scripts"
+# Directories - use absolute paths based on script location
+readonly PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly STATE_DIR="$PROJECT_ROOT/.installation-state"
+readonly CONFIG_DIR="$PROJECT_ROOT/configs"
+readonly SCRIPT_DIR="$PROJECT_ROOT/scripts"
 
 # Get terminal width dynamically (with fallback)
 get_term_width() {
@@ -59,50 +60,50 @@ readonly SOFTWARE_STATE="$STATE_DIR/software-check"
 readonly VM_STATE="$STATE_DIR/vm-info"
 
 ################################################################################
-# Nerd Font Icons (using Unicode escapes for reliable encoding)
-################################################################################
-ICON_CHECK=$'\uf00c'
-ICON_CROSS=$'\uf00d'
-ICON_WARN=$'\uf071'
-ICON_QUESTION=$'\uf128'
-ICON_LOCATION=$'\uf041'
-ICON_INFO=$'\uf05a'
-ICON_SEARCH=$'\uf002'
-ICON_PACKAGE=$'\uf466'
-ICON_DISK=$'\uf0a0'
-ICON_BOLT=$'\uf0e7'
-ICON_LOCK=$'\uf023'
-ICON_FOLDER=$'\uf07b'
-ICON_SAVE=$'\uf0c7'
-ICON_HEALTH=$'\uf21e'
-ICON_BOOK=$'\uf02d'
-ICON_GEAR=$'\uf013'
-ICON_VIDEO=$'\uf03d'
-ICON_EXIT=$'\uf2f5'
-ICON_ROCKET=$'\uf135'
-ICON_CLIPBOARD=$'\uf328'
-ICON_USER=$'\uf007'
-ICON_WRENCH=$'\uf0ad'
-ICON_REFRESH=$'\uf021'
-ICON_TRASH=$'\uf1f8'
-ICON_DOWNLOAD=$'\uf019'
-ICON_FORWARD=$'\uf04e'
-ICON_PLAY=$'\uf04b'
-ICON_BACK=$'\uf060'
-ICON_FILE=$'\uf15b'
-ICON_STAR=$'\uf005'
-
-################################################################################
 # Utility Functions
 ################################################################################
 
 ensure_gum() {
     if ! command -v gum &> /dev/null; then
-        echo "ERROR: gum is not installed!"
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║  gum is not installed (required for TUI interface)           ║"
+        echo "╠══════════════════════════════════════════════════════════════╣"
+        echo "║  Installation options:                                       ║"
+        echo "║    1. sudo apt install gum          (Ubuntu 23.04+)          ║"
+        echo "║    2. brew install gum              (if Homebrew installed)  ║"
+        echo "║    3. go install github.com/charmbracelet/gum@latest         ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
         echo ""
-        echo "Install with:"
-        echo "  Ubuntu/Debian: sudo apt install gum"
-        echo "  Or: go install github.com/charmbracelet/gum@latest"
+
+        # Check if apt has gum available
+        if apt-cache show gum &>/dev/null 2>&1; then
+            read -p "gum is available via apt. Install now? [Y/n] " choice
+            choice="${choice:-Y}"
+            if [[ "$choice" =~ ^[Yy]$ ]]; then
+                echo "Installing gum via apt..."
+                sudo apt install -y gum
+                if command -v gum &> /dev/null; then
+                    echo "✓ gum installed successfully!"
+                    return 0
+                fi
+            fi
+        elif command -v go &> /dev/null; then
+            read -p "Go is installed. Install gum via 'go install'? [Y/n] " choice
+            choice="${choice:-Y}"
+            if [[ "$choice" =~ ^[Yy]$ ]]; then
+                echo "Installing gum via go..."
+                go install github.com/charmbracelet/gum@latest
+                # Add Go bin to PATH for this session
+                export PATH="$PATH:$(go env GOPATH)/bin"
+                if command -v gum &> /dev/null; then
+                    echo "✓ gum installed successfully!"
+                    echo "Note: Add $(go env GOPATH)/bin to your PATH permanently"
+                    return 0
+                fi
+            fi
+        fi
+
+        echo "Please install gum manually and re-run this script."
         exit 1
     fi
 }
@@ -120,7 +121,7 @@ show_header() {
     TERM_WIDTH=$(get_term_width)
 
     gum style \
-        --border rounded \
+        --border double \
         --border-foreground "$COLOR_PRIMARY" \
         --padding "1 2" \
         --margin "1 0" \
@@ -143,24 +144,24 @@ show_breadcrumb() {
     gum style \
         --foreground "$COLOR_MUTED" \
         --padding "0 1" \
-        "${ICON_LOCATION} $1"
+        "📍 $1"
     echo ""
 }
 
 show_success() {
-    gum style --foreground "$COLOR_SUCCESS" "${ICON_CHECK} $1"
+    gum style --foreground "$COLOR_SUCCESS" "$1"
 }
 
 show_error() {
-    gum style --foreground "$COLOR_ERROR" "${ICON_CROSS} $1"
+    gum style --foreground "$COLOR_ERROR" "$1"
 }
 
 show_warning() {
-    gum style --foreground "$COLOR_WARNING" "${ICON_WARN} $1"
+    gum style --foreground "$COLOR_WARNING" "$1"
 }
 
 show_info() {
-    gum style --foreground "$COLOR_INFO" "${ICON_INFO} $1"
+    gum style --foreground "$COLOR_INFO" "$1"
 }
 
 show_section() {
@@ -188,7 +189,7 @@ wait_and_return() {
     gum style \
         --foreground "$COLOR_PRIMARY" \
         --bold \
-        " Press any key to return to $parent_menu..."
+        "← Press any key to return to $parent_menu..."
     read -n 1 -s -r
 }
 
@@ -197,7 +198,7 @@ wait_and_return() {
 show_back_option() {
     local parent_menu="${1:-Main Menu}"
     echo ""
-    if gum confirm --affirmative=" Back to $parent_menu" --negative="Stay here" "Return to previous menu?"; then
+    if gum confirm --affirmative="← Back to $parent_menu" --negative="Stay here" "Return to previous menu?"; then
         return 0
     fi
     return 1
@@ -308,7 +309,7 @@ check_cpu_cores() {
 }
 
 run_hardware_check() {
-    show_header " System Readiness Check" "Validating hardware requirements"
+    show_header "🔍 System Readiness Check" "Validating hardware requirements"
     show_breadcrumb "Main Menu > System Readiness Check"
 
     show_section "Hardware Requirements Validation"
@@ -325,11 +326,11 @@ run_hardware_check() {
     echo ""
 
     if $all_pass; then
-        show_section " All hardware requirements met!
+        show_section "All hardware requirements met!
 Your system is ready for QEMU/KVM virtualization."
         save_state "hardware_check" "passed"
     else
-        show_section " Some hardware requirements not met
+        show_section "Some hardware requirements not met
 Review the failures above. You may continue, but performance may be poor."
 
         if gum confirm "Continue anyway?"; then
@@ -402,7 +403,7 @@ check_user_groups() {
 }
 
 run_software_check() {
-    show_header " Software Installation Status" "Checking installed components"
+    show_header "📦 Software Installation Status" "Checking installed components"
     show_breadcrumb "Main Menu > Installation & Setup > Verify Installation"
 
     show_section "Checking QEMU/KVM Stack"
@@ -419,14 +420,14 @@ run_software_check() {
     if $needs_install; then
         return 1
     else
-        show_section " All software components installed!"
+        show_section "All software components installed!"
         save_state "software_check" "complete"
         return 0
     fi
 }
 
 install_qemu_stack() {
-    show_header " QEMU/KVM Installation" "Installing virtualization stack"
+    show_header "📦 QEMU/KVM Installation" "Installing virtualization stack"
     show_breadcrumb "Main Menu > Installation & Setup > Install QEMU/KVM"
 
     show_section "The following packages will be installed:
@@ -478,7 +479,7 @@ install_qemu_stack() {
 }
 
 configure_user_groups() {
-    show_header " User Group Configuration" "Adding user to libvirt and kvm groups"
+    show_header "👤 User Group Configuration" "Adding user to libvirt and kvm groups"
     show_breadcrumb "Main Menu > Installation & Setup > Configure User Groups"
 
     local user=$(whoami)
@@ -487,7 +488,7 @@ configure_user_groups() {
 • libvirt group (VM management permissions)
 • kvm group (KVM access)
 
- IMPORTANT: You will need to log out and log back in for changes to take effect!"
+IMPORTANT: You will need to log out and log back in for changes to take effect!"
 
     if ! gum confirm "Add $user to libvirt and kvm groups?"; then
         return 1
@@ -515,7 +516,7 @@ configure_user_groups() {
 ################################################################################
 
 list_vms() {
-    show_header " Virtual Machines" "Listing all VMs"
+    show_header "💿 Virtual Machines" "Listing all VMs"
     show_breadcrumb "Main Menu > VM Operations > List VMs"
 
     echo ""
@@ -543,8 +544,33 @@ list_vms() {
     wait_and_return "VM Operations Menu"
 }
 
+# Helper function to select a VM for an operation
+select_vm_for_operation() {
+    local operation="${1:-manage}"
+
+    if ! command -v virsh &> /dev/null; then
+        show_error "libvirt not installed!"
+        return 1
+    fi
+
+    local vms=$(virsh -c qemu:///system list --all --name 2>/dev/null | grep -v '^$')
+
+    if [ -z "$vms" ]; then
+        show_error "No VMs found. Create one first."
+        return 1
+    fi
+
+    local vm_name=$(echo "$vms" | gum choose --header "Select VM to $operation:")
+
+    if [ -z "$vm_name" ]; then
+        return 1
+    fi
+
+    echo "$vm_name"
+}
+
 create_vm_wizard() {
-    show_header " Create New VM Wizard" "Step-by-step Windows 11 VM creation"
+    show_header "Create New VM Wizard" "Step-by-step Windows 11 VM creation"
     show_breadcrumb "Main Menu > VM Operations > Create New VM"
 
     # Step 1: VM Name
@@ -694,7 +720,7 @@ EOF
 }
 
 start_vm() {
-    show_header " Start Virtual Machine"
+    show_header "▶️  Start Virtual Machine"
     show_breadcrumb "Main Menu > VM Operations > Start VM"
 
     local vms=$(virsh list --state-shutoff --name 2>/dev/null | grep -v '^$')
@@ -727,7 +753,7 @@ start_vm() {
 }
 
 stop_vm() {
-    show_header " Stop Virtual Machine"
+    show_header "⏹️  Stop Virtual Machine"
     show_breadcrumb "Main Menu > VM Operations > Stop VM"
 
     local vms=$(virsh list --state-running --name 2>/dev/null | grep -v '^$')
@@ -747,9 +773,9 @@ stop_vm() {
 
     echo ""
     echo "Shutdown method:"
-    local method=$(gum choose "Graceful shutdown (ACPI)" "Force stop (immediate)" " Cancel")
+    local method=$(gum choose "Graceful shutdown (ACPI)" "Force stop (immediate)" "← Cancel")
 
-    if [ -z "$method" ] || [ "$method" = " Cancel" ]; then
+    if [ -z "$method" ] || [ "$method" = "← Cancel" ]; then
         return 0  # User cancelled
     fi
 
@@ -775,7 +801,7 @@ stop_vm() {
 }
 
 delete_vm() {
-    show_header " Delete Virtual Machine"
+    show_header "🗑️  Delete Virtual Machine"
     show_breadcrumb "Main Menu > VM Operations > Delete VM"
 
     local vms=$(virsh list --all --name 2>/dev/null | grep -v '^$')
@@ -794,7 +820,7 @@ delete_vm() {
     fi
 
     echo ""
-    show_warning " WARNING: This will permanently delete the VM and its disk!"
+    show_warning "WARNING: This will permanently delete the VM and its disk!"
     echo ""
 
     if ! gum confirm "Delete '$vm_name'? This cannot be undone!"; then
@@ -824,7 +850,7 @@ delete_vm() {
 ################################################################################
 
 quick_start_wizard() {
-    show_header " Quick Start Wizard" "Guided setup for Windows 11 VM"
+    show_header "Quick Start Wizard" "Guided setup for Windows 11 VM"
     show_breadcrumb "Main Menu > Quick Start"
 
     # Check if we should resume
@@ -858,20 +884,20 @@ quick_start_wizard() {
                 echo ""
 
                 local choice=$(gum choose \
-                    " Retry Hardware Check" \
-                    " Continue Anyway (Not Recommended)" \
-                    " Back to Main Menu")
+                    "🔄 Retry Hardware Check" \
+                    "▶️  Continue Anyway (Not Recommended)" \
+                    "← Back to Main Menu")
 
                 case "$choice" in
-                    " Retry Hardware Check")
+                    "🔄 Retry Hardware Check")
                         continue
                         ;;
-                    " Continue Anyway (Not Recommended)")
+                    "▶️  Continue Anyway (Not Recommended)")
                         show_warning "Continuing despite hardware issues..."
                         break
                         ;;
-                    " Back to Main Menu"|"")
-                        return 0  # Back is a valid choice, not an error
+                    "← Back to Main Menu"|"")
+                        return 1
                         ;;
                 esac
             fi
@@ -882,7 +908,7 @@ quick_start_wizard() {
     if [ "$last_step" -le 2 ]; then
         save_state "wizard_step" "2"
 
-        show_header " Quick Start Wizard - Step 2/6" "Software Installation"
+        show_header "Quick Start Wizard - Step 2/6" "Software Installation"
 
         # Run software check with retry loop
         while true; do
@@ -894,28 +920,28 @@ quick_start_wizard() {
                 echo ""
 
                 local choice=$(gum choose \
-                    " Install QEMU/KVM Stack Now" \
-                    " Retry Software Check" \
-                    " Continue Anyway (Not Recommended)" \
-                    " Back to Main Menu")
+                    "Install QEMU/KVM Stack Now" \
+                    "🔄 Retry Software Check" \
+                    "▶️  Continue Anyway (Not Recommended)" \
+                    "← Back to Main Menu")
 
                 case "$choice" in
-                    " Install QEMU/KVM Stack Now")
+                    "Install QEMU/KVM Stack Now")
                         if install_qemu_stack; then
                             continue  # Re-check after install
                         else
                             show_error "Installation failed. Please check errors above."
                         fi
                         ;;
-                    " Retry Software Check")
+                    "🔄 Retry Software Check")
                         continue
                         ;;
-                    " Continue Anyway (Not Recommended)")
+                    "▶️  Continue Anyway (Not Recommended)")
                         show_warning "Continuing without all software installed..."
                         break
                         ;;
-                    " Back to Main Menu"|"")
-                        return 0  # Back is a valid choice, not an error
+                    "← Back to Main Menu"|"")
+                        return 1
                         ;;
                 esac
             fi
@@ -926,7 +952,7 @@ quick_start_wizard() {
     if [ "$last_step" -le 3 ]; then
         save_state "wizard_step" "3"
 
-        show_header " Quick Start Wizard - Step 3/6" "User Configuration"
+        show_header "Quick Start Wizard - Step 3/6" "User Configuration"
 
         # Check user groups with retry loop
         while true; do
@@ -938,36 +964,36 @@ quick_start_wizard() {
                 echo ""
 
                 local choice=$(gum choose \
-                    " Configure User Groups Now" \
-                    " Retry Group Check" \
-                    " Continue Anyway (May Cause Permission Errors)" \
-                    " Back to Main Menu")
+                    "Configure User Groups Now" \
+                    "🔄 Retry Group Check" \
+                    "▶️  Continue Anyway (May Cause Permission Errors)" \
+                    "← Back to Main Menu")
 
                 case "$choice" in
-                    " Configure User Groups Now")
+                    "Configure User Groups Now")
                         if configure_user_groups; then
                             if [ "$(load_state logout_required)" = "true" ]; then
-                                show_section " LOGOUT REQUIRED
+                                show_section "LOGOUT REQUIRED
 
 You must log out and log back in for group changes to take effect.
 
 After logging back in, run this wizard again to continue from Step 4."
 
                                 local logout_choice=$(gum choose \
-                                    " Exit Now (Recommended)" \
-                                    " I've Logged Out - Retry Check" \
-                                    " Back to Main Menu")
+                                    "🚪 Exit Now (Recommended)" \
+                                    "🔄 I've Logged Out - Retry Check" \
+                                    "← Back to Main Menu")
 
                                 case "$logout_choice" in
-                                    " Exit Now (Recommended)")
+                                    "🚪 Exit Now (Recommended)")
                                         exit 0
                                         ;;
-                                    " I've Logged Out - Retry Check")
+                                    "🔄 I've Logged Out - Retry Check")
                                         save_state "logout_required" "false"
                                         continue
                                         ;;
-                                    " Back to Main Menu"|"")
-                                        return 0  # Back is a valid choice, not an error
+                                    "← Back to Main Menu"|"")
+                                        return 1
                                         ;;
                                 esac
                             fi
@@ -975,15 +1001,15 @@ After logging back in, run this wizard again to continue from Step 4."
                             show_error "Group configuration failed."
                         fi
                         ;;
-                    " Retry Group Check")
+                    "🔄 Retry Group Check")
                         continue
                         ;;
-                    " Continue Anyway (May Cause Permission Errors)")
+                    "▶️  Continue Anyway (May Cause Permission Errors)")
                         show_warning "Continuing without proper groups..."
                         break
                         ;;
-                    " Back to Main Menu"|"")
-                        return 0  # Back is a valid choice, not an error
+                    "← Back to Main Menu"|"")
+                        return 1
                         ;;
                 esac
             fi
@@ -994,7 +1020,7 @@ After logging back in, run this wizard again to continue from Step 4."
     if [ "$last_step" -le 4 ]; then
         save_state "wizard_step" "4"
 
-        show_header " Quick Start Wizard - Step 4/6" "Download Installation Media"
+        show_header "Quick Start Wizard - Step 4/6" "Download Installation Media"
 
         # ISO download step with retry loop
         while true; do
@@ -1009,16 +1035,16 @@ After logging back in, run this wizard again to continue from Step 4."
 Download these files now, then return here to continue."
 
             local choice=$(gum choose \
-                " I Have Both ISOs - Continue" \
-                " Open Download URLs in Browser" \
-                " Skip for Now (Configure Later)" \
-                " Back to Main Menu")
+                "I Have Both ISOs - Continue" \
+                "📥 Open Download URLs in Browser" \
+                "⏭️  Skip for Now (Configure Later)" \
+                "← Back to Main Menu")
 
             case "$choice" in
-                " I Have Both ISOs - Continue")
+                "I Have Both ISOs - Continue")
                     break
                     ;;
-                " Open Download URLs in Browser")
+                "📥 Open Download URLs in Browser")
                     if command -v xdg-open &> /dev/null; then
                         xdg-open "https://www.microsoft.com/software-download/windows11" &
                         sleep 1
@@ -1032,12 +1058,12 @@ Download these files now, then return here to continue."
                     read -n 1 -s -r
                     continue
                     ;;
-                " Skip for Now (Configure Later)")
+                "⏭️  Skip for Now (Configure Later)")
                     show_warning "Skipping ISO verification. You'll need to provide paths during VM creation."
                     break
                     ;;
-                " Back to Main Menu"|"")
-                    return 0  # Back is a valid choice, not an error
+                "← Back to Main Menu"|"")
+                    return 1
                     ;;
             esac
         done
@@ -1047,17 +1073,17 @@ Download these files now, then return here to continue."
     if [ "$last_step" -le 5 ]; then
         save_state "wizard_step" "5"
 
-        show_header " Quick Start Wizard - Step 5/6" "Create Virtual Machine"
+        show_header "Quick Start Wizard - Step 5/6" "Create Virtual Machine"
 
-        create_vm_wizard || return 0  # User may have gone back from VM wizard
+        create_vm_wizard || return 1
     fi
 
     # Step 6: Next Steps
     save_state "wizard_step" "6"
 
-    show_header " Quick Start Wizard - Complete!" "VM created successfully"
+    show_header "Quick Start Wizard - Complete!" "VM created successfully"
 
-    show_section " Wizard Complete!
+    show_section "Wizard Complete!
 
 Your Windows 11 VM has been created. Next steps:
 
@@ -1081,7 +1107,7 @@ Recommended: Run 'Performance Optimization' from the main menu
 
 show_documentation() {
     while true; do
-        show_header " Documentation & Help"
+        show_header "📚 Documentation & Help"
         show_breadcrumb "Main Menu > Documentation"
 
         local choice=$(gum choose \
@@ -1092,7 +1118,7 @@ show_documentation() {
             "Performance Tuning" \
             "Security Hardening" \
             "Agent System" \
-            " Back to Main Menu")
+            "← Back to Main Menu")
 
         case "$choice" in
             "Quick Start Guide")
@@ -1153,7 +1179,7 @@ show_documentation() {
                     wait_and_return "Documentation Menu"
                 fi
                 ;;
-            " Back to Main Menu"|"")
+            "← Back to Main Menu"|"")
                 break
                 ;;
         esac
@@ -1165,7 +1191,7 @@ show_documentation() {
 ################################################################################
 
 run_demo_mode() {
-    show_header " Demo Mode (VHS)" "Recording automated tour"
+    show_header "🎥 Demo Mode (VHS)" "Recording automated tour"
 
     if ! command -v vhs &> /dev/null; then
         show_error "vhs is not installed!"
@@ -1378,70 +1404,70 @@ show_main_menu() {
             --padding "1 2" \
             --width "$TERM_WIDTH" \
             "System Status:
-  Hardware Check: $([ "$hw_status" = "passed" ] && echo "${ICON_CHECK} Passed" || echo "${ICON_QUESTION} Not checked")
-  Software: $([ "$sw_status" = "complete" ] && echo "${ICON_CHECK} Installed" || echo "${ICON_QUESTION} Not checked")
-  VM Created: $([ "$vm_status" = "true" ] && echo "${ICON_CHECK} Yes" || echo "${ICON_CROSS} No")"
+  Hardware Check: $([ "$hw_status" = "passed" ] && echo "Passed" || echo "Not checked")
+  Software: $([ "$sw_status" = "complete" ] && echo "Installed" || echo "Not checked")
+  VM Created: $([ "$vm_status" = "true" ] && echo "Yes" || echo "No")"
 
         echo ""
 
         local choice=$(gum choose \
-            "${ICON_ROCKET} Quick Start (Guided Setup Wizard)" \
-            "${ICON_CLIPBOARD} System Readiness Check" \
-            "${ICON_PACKAGE} Installation & Setup" \
-            "${ICON_DISK} Virtual Machine Operations" \
-            "${ICON_BOLT} Performance & Optimization" \
-            "${ICON_LOCK} Security & Hardening" \
-            "${ICON_FOLDER} File Sharing (virtio-fs)" \
-            "${ICON_SAVE} Backup & Recovery" \
-            "${ICON_HEALTH} Health & Diagnostics" \
-            "${ICON_BOOK} Documentation & Help" \
-            "${ICON_GEAR} Settings" \
-            "${ICON_VIDEO} Run Demo (Record VHS)" \
-            "${ICON_EXIT} Exit")
+            "Quick Start (Guided Setup Wizard)" \
+            "📋 System Readiness Check" \
+            "📦 Installation & Setup" \
+            "💿 Virtual Machine Operations" \
+            "Performance & Optimization" \
+            "🔒 Security & Hardening" \
+            "File Sharing (virtio-fs)" \
+            "Backup & Recovery" \
+            "🏥 Health & Diagnostics" \
+            "📚 Documentation & Help" \
+            "⚙️  Settings" \
+            "🎥 Run Demo (Record VHS)" \
+            "🚪 Exit")
 
         case "$choice" in
-            "${ICON_ROCKET} Quick Start (Guided Setup Wizard)")
+            "Quick Start (Guided Setup Wizard)")
                 quick_start_wizard
                 ;;
-            "${ICON_CLIPBOARD} System Readiness Check")
+            "📋 System Readiness Check")
                 run_hardware_check
                 ;;
-            "${ICON_PACKAGE} Installation & Setup")
+            "📦 Installation & Setup")
                 show_installation_menu
                 ;;
-            "${ICON_DISK} Virtual Machine Operations")
+            "💿 Virtual Machine Operations")
                 show_vm_menu
                 ;;
-            "${ICON_BOLT} Performance & Optimization")
+            "Performance & Optimization")
                 show_performance_menu
                 ;;
-            "${ICON_LOCK} Security & Hardening")
+            "🔒 Security & Hardening")
                 show_security_menu
                 ;;
-            "${ICON_FOLDER} File Sharing (virtio-fs)")
+            "File Sharing (virtio-fs)")
                 show_filesharing_menu
                 ;;
-            "${ICON_SAVE} Backup & Recovery")
+            "Backup & Recovery")
                 show_backup_menu
                 ;;
-            "${ICON_HEALTH} Health & Diagnostics")
+            "🏥 Health & Diagnostics")
                 show_diagnostics_menu
                 ;;
-            "${ICON_BOOK} Documentation & Help")
+            "📚 Documentation & Help")
                 show_documentation
                 ;;
-            "${ICON_GEAR} Settings")
+            "⚙️  Settings")
                 show_settings_menu
                 ;;
-            "${ICON_VIDEO} Run Demo (Record VHS)")
+            "🎥 Run Demo (Record VHS)")
                 run_demo_mode
                 ;;
-            "${ICON_EXIT} Exit")
+            "🚪 Exit")
                 clear
                 gum style \
                     --foreground "$COLOR_PRIMARY" \
                     --padding "1 2" \
-                    "Thanks for using Win-QEMU!"
+                    "Thanks for using Win-QEMU! 👋"
                 echo ""
                 exit 0
                 ;;
@@ -1451,7 +1477,7 @@ show_main_menu() {
 
 show_installation_menu() {
     while true; do
-        show_header " Installation & Setup"
+        show_header "📦 Installation & Setup"
         show_breadcrumb "Main Menu > Installation & Setup"
 
         local choice=$(gum choose \
@@ -1460,7 +1486,7 @@ show_installation_menu() {
             "Download Windows 11 ISO (Instructions)" \
             "Download VirtIO Drivers (Instructions)" \
             "Verify Installation" \
-            " Back to Main Menu")
+            "← Back to Main Menu")
 
         case "$choice" in
             "Install QEMU/KVM Stack")
@@ -1470,7 +1496,7 @@ show_installation_menu() {
                 configure_user_groups
                 ;;
             "Download Windows 11 ISO (Instructions)")
-                show_header " Windows 11 ISO Download"
+                show_header "💿 Windows 11 ISO Download"
                 show_section "Download Windows 11 ISO from Microsoft:
 
 URL: https://www.microsoft.com/software-download/windows11
@@ -1486,7 +1512,7 @@ Save the ISO to a known location (e.g., ~/Downloads/Win11.iso)"
                 pause_for_user
                 ;;
             "Download VirtIO Drivers (Instructions)")
-                show_header " VirtIO Drivers Download"
+                show_header "💿 VirtIO Drivers Download"
                 show_section "Download VirtIO drivers for Windows:
 
 URL: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/
@@ -1519,7 +1545,7 @@ in your Windows 11 VM."
                 fi
                 pause_for_user
                 ;;
-            " Back to Main Menu")
+            "← Back to Main Menu")
                 break
                 ;;
         esac
@@ -1528,7 +1554,7 @@ in your Windows 11 VM."
 
 show_vm_menu() {
     while true; do
-        show_header " Virtual Machine Operations"
+        show_header "💿 Virtual Machine Operations"
         show_breadcrumb "Main Menu > VM Operations"
 
         local choice=$(gum choose \
@@ -1538,7 +1564,7 @@ show_vm_menu() {
             "Stop VM" \
             "Delete VM" \
             "VM Console (virt-manager)" \
-            " Back to Main Menu")
+            "← Back to Main Menu")
 
         case "$choice" in
             "Create New VM (Wizard)")
@@ -1559,7 +1585,7 @@ show_vm_menu() {
             "VM Console (virt-manager)")
                 virt-manager &
                 ;;
-            " Back to Main Menu")
+            "← Back to Main Menu")
                 break
                 ;;
         esac
@@ -1568,37 +1594,82 @@ show_vm_menu() {
 
 show_performance_menu() {
     while true; do
-        show_header " Performance & Optimization"
+        show_header "Performance & Optimization"
         show_breadcrumb "Main Menu > Performance"
 
         local choice=$(gum choose \
             "View Performance Guide" \
-            "CPU Pinning (coming soon)" \
-            "Huge Pages (coming soon)" \
-            "Hyper-V Enlightenments (coming soon)" \
-            "VirtIO Tuning (coming soon)" \
-            " Back to Main Menu")
+            "Apply All Optimizations" \
+            "CPU Pinning" \
+            "Huge Pages" \
+            "Hyper-V Enlightenments" \
+            "VirtIO Tuning" \
+            "← Back to Main Menu")
 
         case "$choice" in
             "View Performance Guide")
-                show_section "Performance optimization features coming soon!
+                show_section "Performance Optimization Guide
 
-For now, please refer to:
-• outlook-linux-guide/09-performance-optimization-playbook.md
-• Use the guardian-performance agent from Claude Code
+Available optimizations:
+• Hyper-V enlightenments (14 features) - 10-15% improvement
+• CPU pinning - 3-5% improvement
+• Huge pages - 5-10% improvement
+• VirtIO driver tuning - I/O optimization
 
-Key optimizations:
-- Hyper-V enlightenments (14 features)
-- CPU pinning
-- Huge pages
-- VirtIO driver tuning"
+Target: 85-95% native Windows performance
+
+Script: $SCRIPT_DIR/configure-performance.sh"
                 wait_and_return "Performance Menu"
                 ;;
-            "CPU Pinning (coming soon)"|"Huge Pages (coming soon)"|"Hyper-V Enlightenments (coming soon)"|"VirtIO Tuning (coming soon)")
-                show_info "This feature is coming soon!"
+            "Apply All Optimizations")
+                local vm_name=$(select_vm_for_operation "optimize")
+                if [[ -n "$vm_name" ]]; then
+                    show_header "Applying all optimizations to '$vm_name'..."
+                    if [ -f "$SCRIPT_DIR/configure-performance.sh" ]; then
+                        "$SCRIPT_DIR/configure-performance.sh" --vm "$vm_name" --all --yes || true
+                    else
+                        show_error "configure-performance.sh not found"
+                    fi
+                fi
                 wait_and_return "Performance Menu"
                 ;;
-            " Back to Main Menu"|"")
+            "CPU Pinning")
+                local vm_name=$(select_vm_for_operation "configure CPU pinning for")
+                if [[ -n "$vm_name" ]]; then
+                    if [ -f "$SCRIPT_DIR/configure-performance.sh" ]; then
+                        "$SCRIPT_DIR/configure-performance.sh" --vm "$vm_name" --cpu-pinning || true
+                    fi
+                fi
+                wait_and_return "Performance Menu"
+                ;;
+            "Huge Pages")
+                local vm_name=$(select_vm_for_operation "configure huge pages for")
+                if [[ -n "$vm_name" ]]; then
+                    if [ -f "$SCRIPT_DIR/configure-performance.sh" ]; then
+                        "$SCRIPT_DIR/configure-performance.sh" --vm "$vm_name" --huge-pages || true
+                    fi
+                fi
+                wait_and_return "Performance Menu"
+                ;;
+            "Hyper-V Enlightenments")
+                local vm_name=$(select_vm_for_operation "configure Hyper-V for")
+                if [[ -n "$vm_name" ]]; then
+                    if [ -f "$SCRIPT_DIR/configure-performance.sh" ]; then
+                        "$SCRIPT_DIR/configure-performance.sh" --vm "$vm_name" --hyperv || true
+                    fi
+                fi
+                wait_and_return "Performance Menu"
+                ;;
+            "VirtIO Tuning")
+                local vm_name=$(select_vm_for_operation "tune VirtIO for")
+                if [[ -n "$vm_name" ]]; then
+                    if [ -f "$SCRIPT_DIR/configure-performance.sh" ]; then
+                        "$SCRIPT_DIR/configure-performance.sh" --vm "$vm_name" --virtio || true
+                    fi
+                fi
+                wait_and_return "Performance Menu"
+                ;;
+            "← Back to Main Menu"|"")
                 break
                 ;;
         esac
@@ -1607,37 +1678,77 @@ Key optimizations:
 
 show_security_menu() {
     while true; do
-        show_header " Security & Hardening"
+        show_header "🔒 Security & Hardening"
         show_breadcrumb "Main Menu > Security"
 
         local choice=$(gum choose \
+            "Run Security Audit" \
+            "Apply All Security Hardening" \
+            "Configure Host Firewall" \
+            "Enforce virtio-fs Read-Only" \
+            "Configure AppArmor" \
             "View Security Guide" \
-            "Host Firewall (coming soon)" \
-            "virtio-fs Read-Only Mode (coming soon)" \
-            "BitLocker Setup (coming soon)" \
-            "AppArmor/SELinux Profiles (coming soon)" \
-            " Back to Main Menu")
+            "← Back to Main Menu")
 
         case "$choice" in
+            "Run Security Audit")
+                show_header "Running Security Audit..."
+                if [ -f "$SCRIPT_DIR/configure-security.sh" ]; then
+                    "$SCRIPT_DIR/configure-security.sh" --audit || true
+                else
+                    show_error "configure-security.sh not found"
+                fi
+                wait_and_return "Security Menu"
+                ;;
+            "Apply All Security Hardening")
+                local vm_name=$(select_vm_for_operation "harden")
+                if [[ -n "$vm_name" ]]; then
+                    show_header "Applying security hardening to '$vm_name'..."
+                    if [ -f "$SCRIPT_DIR/configure-security.sh" ]; then
+                        sudo "$SCRIPT_DIR/configure-security.sh" --vm "$vm_name" --all || true
+                    fi
+                fi
+                wait_and_return "Security Menu"
+                ;;
+            "Configure Host Firewall")
+                show_header "Configuring UFW Firewall..."
+                if [ -f "$SCRIPT_DIR/configure-security.sh" ]; then
+                    sudo "$SCRIPT_DIR/configure-security.sh" --firewall || true
+                fi
+                wait_and_return "Security Menu"
+                ;;
+            "Enforce virtio-fs Read-Only")
+                local vm_name=$(select_vm_for_operation "enforce read-only for")
+                if [[ -n "$vm_name" ]]; then
+                    if [ -f "$SCRIPT_DIR/configure-security.sh" ]; then
+                        "$SCRIPT_DIR/configure-security.sh" --vm "$vm_name" --virtiofs-ro || true
+                    fi
+                fi
+                wait_and_return "Security Menu"
+                ;;
+            "Configure AppArmor")
+                show_header "Configuring AppArmor..."
+                if [ -f "$SCRIPT_DIR/configure-security.sh" ]; then
+                    sudo "$SCRIPT_DIR/configure-security.sh" --apparmor || true
+                fi
+                wait_and_return "Security Menu"
+                ;;
             "View Security Guide")
-                show_section "Security hardening features coming soon!
+                show_section "Security Hardening Guide
 
-For now, please refer to:
-• research/06-security-hardening-analysis.md
-• Use the guardian-security agent from Claude Code
+Available features:
+• UFW Firewall - Block unnecessary network access
+• virtio-fs Read-Only - Mandatory protection against ransomware
+• AppArmor - Confine QEMU processes
 
-Key security measures:
-- Host firewall (M365 whitelist)
-- virtio-fs read-only mode
-- BitLocker in guest
-- AppArmor/SELinux profiles"
+Key security principle:
+  Host filesystem sharing MUST be read-only!
+  This protects against ransomware encrypting host files.
+
+Script: $SCRIPT_DIR/configure-security.sh"
                 wait_and_return "Security Menu"
                 ;;
-            "Host Firewall (coming soon)"|"virtio-fs Read-Only Mode (coming soon)"|"BitLocker Setup (coming soon)"|"AppArmor/SELinux Profiles (coming soon)")
-                show_info "This feature is coming soon!"
-                wait_and_return "Security Menu"
-                ;;
-            " Back to Main Menu"|"")
+            "← Back to Main Menu"|"")
                 break
                 ;;
         esac
@@ -1646,36 +1757,66 @@ Key security measures:
 
 show_filesharing_menu() {
     while true; do
-        show_header " File Sharing (virtio-fs)"
+        show_header "File Sharing (virtio-fs)"
         show_breadcrumb "Main Menu > File Sharing"
 
         local choice=$(gum choose \
+            "Setup virtio-fs Share" \
+            "Test virtio-fs Connection" \
             "View File Sharing Guide" \
-            "Setup virtio-fs Share (coming soon)" \
-            "Test virtio-fs Connection (coming soon)" \
-            "Configure Read-Only Mode (coming soon)" \
-            "Mount PST Files (coming soon)" \
-            " Back to Main Menu")
+            "← Back to Main Menu")
 
         case "$choice" in
+            "Setup virtio-fs Share")
+                local vm_name=$(select_vm_for_operation "configure virtio-fs for")
+                if [[ -n "$vm_name" ]]; then
+                    show_header "Setting up virtio-fs for '$vm_name'..."
+
+                    # Ask for source directory
+                    local source_dir=$(gum input --placeholder "/home/$USER/shared-folder" --prompt "Source directory on host: ")
+                    if [[ -z "$source_dir" ]]; then
+                        source_dir="/home/$USER/shared-folder"
+                    fi
+
+                    if [ -f "$SCRIPT_DIR/setup-virtio-fs.sh" ]; then
+                        "$SCRIPT_DIR/setup-virtio-fs.sh" --vm "$vm_name" --source "$source_dir" || true
+                    else
+                        show_error "setup-virtio-fs.sh not found"
+                    fi
+                fi
+                wait_and_return "File Sharing Menu"
+                ;;
+            "Test virtio-fs Connection")
+                local vm_name=$(select_vm_for_operation "test virtio-fs for")
+                if [[ -n "$vm_name" ]]; then
+                    if [ -f "$SCRIPT_DIR/test-virtio-fs.sh" ]; then
+                        "$SCRIPT_DIR/test-virtio-fs.sh" --vm "$vm_name" --verbose || true
+                    else
+                        show_error "test-virtio-fs.sh not found"
+                    fi
+                fi
+                wait_and_return "File Sharing Menu"
+                ;;
             "View File Sharing Guide")
-                show_section "File sharing features coming soon!
+                show_section "virtio-fs File Sharing Guide
 
-For now, please refer to:
-• Use the guardian-virtiofs agent from Claude Code
+virtio-fs provides high-performance filesystem sharing between host and guest.
 
-virtio-fs provides:
-- High-performance file sharing
-- Direct host → guest access
-- Read-only mode for security
-- Ideal for PST file access"
+IMPORTANT: Read-only mode is MANDATORY for security!
+This protects against ransomware encrypting host files.
+
+Setup steps:
+1. Configure share with setup-virtio-fs.sh
+2. Install WinFsp in Windows guest
+3. Mount share as drive letter (e.g., Z:)
+4. Access host files from Windows
+
+Scripts:
+• $SCRIPT_DIR/setup-virtio-fs.sh
+• $SCRIPT_DIR/test-virtio-fs.sh"
                 wait_and_return "File Sharing Menu"
                 ;;
-            "Setup virtio-fs Share (coming soon)"|"Test virtio-fs Connection (coming soon)"|"Configure Read-Only Mode (coming soon)"|"Mount PST Files (coming soon)")
-                show_info "This feature is coming soon!"
-                wait_and_return "File Sharing Menu"
-                ;;
-            " Back to Main Menu"|"")
+            "← Back to Main Menu"|"")
                 break
                 ;;
         esac
@@ -1684,32 +1825,98 @@ virtio-fs provides:
 
 show_backup_menu() {
     while true; do
-        show_header " Backup & Recovery"
+        show_header "Backup & Recovery"
         show_breadcrumb "Main Menu > Backup"
 
         local choice=$(gum choose \
+            "Create Backup (Live)" \
+            "Create Backup (Offline)" \
+            "Create Snapshot Only" \
+            "List Snapshots" \
+            "Restore Snapshot" \
             "View Backup Guide" \
-            "Create Snapshot (coming soon)" \
-            "List Snapshots (coming soon)" \
-            "Restore Snapshot (coming soon)" \
-            "Export VM (coming soon)" \
-            " Back to Main Menu")
+            "← Back to Main Menu")
 
         case "$choice" in
+            "Create Backup (Live)")
+                local vm_name=$(select_vm_for_operation "backup")
+                if [[ -n "$vm_name" ]]; then
+                    show_header "Creating live backup of '$vm_name'..."
+                    if [ -f "$SCRIPT_DIR/backup-vm.sh" ]; then
+                        "$SCRIPT_DIR/backup-vm.sh" --vm "$vm_name" --live --yes || true
+                    else
+                        show_error "backup-vm.sh not found"
+                    fi
+                fi
+                wait_and_return "Backup Menu"
+                ;;
+            "Create Backup (Offline)")
+                local vm_name=$(select_vm_for_operation "backup")
+                if [[ -n "$vm_name" ]]; then
+                    show_header "Creating offline backup of '$vm_name'..."
+                    if [ -f "$SCRIPT_DIR/backup-vm.sh" ]; then
+                        "$SCRIPT_DIR/backup-vm.sh" --vm "$vm_name" --offline --yes || true
+                    fi
+                fi
+                wait_and_return "Backup Menu"
+                ;;
+            "Create Snapshot Only")
+                local vm_name=$(select_vm_for_operation "snapshot")
+                if [[ -n "$vm_name" ]]; then
+                    local snap_name=$(gum input --placeholder "snapshot-$(date +%Y%m%d)" --prompt "Snapshot name: ")
+                    if [[ -z "$snap_name" ]]; then
+                        snap_name="snapshot-$(date +%Y%m%d-%H%M%S)"
+                    fi
+                    show_header "Creating snapshot '$snap_name' for '$vm_name'..."
+                    virsh -c qemu:///system snapshot-create-as "$vm_name" "$snap_name" --description "Created via start.sh" || true
+                fi
+                wait_and_return "Backup Menu"
+                ;;
+            "List Snapshots")
+                local vm_name=$(select_vm_for_operation "list snapshots for")
+                if [[ -n "$vm_name" ]]; then
+                    show_header "Snapshots for '$vm_name'"
+                    virsh -c qemu:///system snapshot-list "$vm_name" || true
+                fi
+                wait_and_return "Backup Menu"
+                ;;
+            "Restore Snapshot")
+                local vm_name=$(select_vm_for_operation "restore snapshot for")
+                if [[ -n "$vm_name" ]]; then
+                    # Get list of snapshots
+                    local snapshots=$(virsh -c qemu:///system snapshot-list "$vm_name" --name 2>/dev/null)
+                    if [[ -z "$snapshots" ]]; then
+                        show_error "No snapshots found for '$vm_name'"
+                    else
+                        local snap_name=$(echo "$snapshots" | gum choose --header "Select snapshot to restore:")
+                        if [[ -n "$snap_name" ]]; then
+                            if gum confirm "Restore '$vm_name' to snapshot '$snap_name'?"; then
+                                show_header "Restoring snapshot..."
+                                virsh -c qemu:///system snapshot-revert "$vm_name" "$snap_name" || true
+                            fi
+                        fi
+                    fi
+                fi
+                wait_and_return "Backup Menu"
+                ;;
             "View Backup Guide")
-                show_section "Backup features coming soon!
+                show_section "Backup & Recovery Guide
 
-Basic backup commands:
-• Create snapshot: virsh snapshot-create-as <vm-name> <snapshot-name>
-• List snapshots: virsh snapshot-list <vm-name>
-• Restore snapshot: virsh snapshot-revert <vm-name> <snapshot-name>"
+Backup Types:
+• Live Backup - Backup while VM is running
+• Offline Backup - Stop VM, backup, restart
+• Snapshot - Point-in-time state capture
+
+Backup script: $SCRIPT_DIR/backup-vm.sh
+
+Manual commands:
+• Create snapshot: virsh snapshot-create-as <vm> <name>
+• List snapshots: virsh snapshot-list <vm>
+• Restore: virsh snapshot-revert <vm> <name>
+• Delete: virsh snapshot-delete <vm> <name>"
                 wait_and_return "Backup Menu"
                 ;;
-            "Create Snapshot (coming soon)"|"List Snapshots (coming soon)"|"Restore Snapshot (coming soon)"|"Export VM (coming soon)")
-                show_info "This feature is coming soon!"
-                wait_and_return "Backup Menu"
-                ;;
-            " Back to Main Menu"|"")
+            "← Back to Main Menu"|"")
                 break
                 ;;
         esac
@@ -1718,7 +1925,7 @@ Basic backup commands:
 
 show_diagnostics_menu() {
     while true; do
-        show_header " Health & Diagnostics"
+        show_header "🏥 Health & Diagnostics"
         show_breadcrumb "Main Menu > Diagnostics"
 
         local choice=$(gum choose \
@@ -1727,7 +1934,7 @@ show_diagnostics_menu() {
             "Run Quick Software Check" \
             "Check VM Status" \
             "View Latest Report" \
-            " Back to Main Menu")
+            "← Back to Main Menu")
 
         case "$choice" in
             "Run Full System Check (42+ Checks)")
@@ -1749,7 +1956,7 @@ show_diagnostics_menu() {
             "View Latest Report")
                 view_latest_report
                 ;;
-            " Back to Main Menu"|"")
+            "← Back to Main Menu"|"")
                 break
                 ;;
         esac
@@ -1759,7 +1966,7 @@ show_diagnostics_menu() {
 # Run full system check with retry loop
 run_full_system_check_with_retry() {
     while true; do
-        show_header " Full System Readiness Check" "Running 42+ prerequisite checks..."
+        show_header "🔍 Full System Readiness Check" "Running 42+ prerequisite checks..."
         show_breadcrumb "Main Menu > Diagnostics > Full System Check"
 
         # Run the comprehensive check script
@@ -1790,15 +1997,15 @@ run_hardware_check_with_retry() {
 
         # Show retry menu
         local choice=$(gum choose \
-            " Retry Hardware Check" \
-            " Continue" \
-            " Back to Diagnostics Menu")
+            "🔄 Retry Hardware Check" \
+            "▶️  Continue" \
+            "← Back to Diagnostics Menu")
 
         case "$choice" in
-            " Retry Hardware Check")
+            "🔄 Retry Hardware Check")
                 continue  # Loop again
                 ;;
-            " Continue"|" Back to Diagnostics Menu"|"")
+            "▶️  Continue"|"← Back to Diagnostics Menu"|"")
                 break
                 ;;
         esac
@@ -1820,23 +2027,23 @@ run_software_check_with_retry() {
         local options=()
 
         if $needs_install; then
-            options+=(" Install Missing Components")
+            options+=("Install Missing Components")
         fi
 
-        options+=(" Retry Software Check")
-        options+=(" Back to Diagnostics Menu")
+        options+=("🔄 Retry Software Check")
+        options+=("← Back to Diagnostics Menu")
 
         local choice=$(printf '%s\n' "${options[@]}" | gum choose)
 
         case "$choice" in
-            " Install Missing Components")
+            "Install Missing Components")
                 install_qemu_stack
                 continue  # Re-check after install
                 ;;
-            " Retry Software Check")
+            "🔄 Retry Software Check")
                 continue
                 ;;
-            " Back to Diagnostics Menu"|"")
+            "← Back to Diagnostics Menu"|"")
                 break
                 ;;
         esac
@@ -1845,7 +2052,7 @@ run_software_check_with_retry() {
 
 # View the latest readiness check report
 view_latest_report() {
-    show_header " Latest Readiness Report"
+    show_header "📄 Latest Readiness Report"
     show_breadcrumb "Main Menu > Diagnostics > View Report"
 
     local report_dir="$STATE_DIR"
@@ -1879,14 +2086,14 @@ view_latest_report() {
 
 show_settings_menu() {
     while true; do
-        show_header " Settings"
+        show_header "⚙️  Settings"
         show_breadcrumb "Main Menu > Settings"
 
         local choice=$(gum choose \
             "Reset Wizard Progress" \
             "Clear All State" \
             "View State Files" \
-            " Back to Main Menu")
+            "← Back to Main Menu")
 
         case "$choice" in
             "Reset Wizard Progress")
@@ -1913,7 +2120,7 @@ show_settings_menu() {
                 fi
                 wait_and_return "Settings Menu"
                 ;;
-            " Back to Main Menu"|"")
+            "← Back to Main Menu"|"")
                 break
                 ;;
         esac

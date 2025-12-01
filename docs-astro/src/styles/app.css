@@ -1,0 +1,410 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* ============================================================================
+   QEMU/KVM Documentation - Commit-Style Design
+
+   Design: Two-column layout with fixed sidebar, Commit-style typography
+   Colors: Original nightowl/sunrise themes preserved
+   Fonts: Mona Sans (display) + Inter (body)
+   ============================================================================ */
+
+/* Font declarations */
+@font-face {
+  font-family: 'Mona Sans';
+  font-weight: 200 900;
+  font-display: swap;
+  font-style: normal;
+  src: url('/win-qemu/fonts/Mona-Sans.var.woff2') format('woff2');
+}
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Mona Sans', ui-sans-serif, system-ui, sans-serif;
+  --text-2xs: 0.6875rem;
+
+  /* Nightowl (Dark) Theme Colors */
+  --color-nightowl-primary: oklch(0.75 0.18 280);
+  --color-nightowl-secondary: oklch(0.70 0.15 200);
+  --color-nightowl-accent: oklch(0.80 0.20 320);
+  --color-nightowl-neutral: oklch(0.30 0.02 270);
+  --color-nightowl-base-100: oklch(0.15 0.03 270);
+  --color-nightowl-base-200: oklch(0.12 0.02 270);
+  --color-nightowl-base-300: oklch(0.10 0.02 270);
+  --color-nightowl-info: oklch(0.70 0.15 230);
+  --color-nightowl-success: oklch(0.70 0.18 150);
+  --color-nightowl-warning: oklch(0.80 0.18 85);
+  --color-nightowl-error: oklch(0.65 0.20 25);
+
+  /* Sunrise (Light) Theme Colors */
+  --color-sunrise-primary: oklch(0.60 0.20 30);
+  --color-sunrise-secondary: oklch(0.55 0.15 150);
+  --color-sunrise-accent: oklch(0.70 0.18 45);
+  --color-sunrise-neutral: oklch(0.40 0.02 60);
+  --color-sunrise-base-100: oklch(0.98 0.01 90);
+  --color-sunrise-base-200: oklch(0.95 0.02 85);
+  --color-sunrise-base-300: oklch(0.92 0.02 80);
+  --color-sunrise-info: oklch(0.55 0.15 230);
+  --color-sunrise-success: oklch(0.55 0.18 150);
+  --color-sunrise-warning: oklch(0.75 0.18 85);
+  --color-sunrise-error: oklch(0.55 0.20 25);
+}
+
+/* DaisyUI Theme Definitions */
+@plugin "daisyui/theme" {
+  name: "nightowl";
+  default: true;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: var(--color-nightowl-base-100);
+  --color-base-200: var(--color-nightowl-base-200);
+  --color-base-300: var(--color-nightowl-base-300);
+  --color-base-content: oklch(0.90 0.02 280);
+
+  --color-primary: var(--color-nightowl-primary);
+  --color-primary-content: oklch(0.15 0.02 280);
+
+  --color-secondary: var(--color-nightowl-secondary);
+  --color-secondary-content: oklch(0.15 0.02 200);
+
+  --color-accent: var(--color-nightowl-accent);
+  --color-accent-content: oklch(0.15 0.02 320);
+
+  --color-neutral: var(--color-nightowl-neutral);
+  --color-neutral-content: oklch(0.90 0.02 270);
+
+  --color-info: var(--color-nightowl-info);
+  --color-info-content: oklch(0.15 0.02 230);
+
+  --color-success: var(--color-nightowl-success);
+  --color-success-content: oklch(0.15 0.02 150);
+
+  --color-warning: var(--color-nightowl-warning);
+  --color-warning-content: oklch(0.15 0.02 85);
+
+  --color-error: var(--color-nightowl-error);
+  --color-error-content: oklch(0.98 0.02 25);
+
+  --rounded-box: 0.75rem;
+  --rounded-btn: 0.375rem;
+  --rounded-badge: 1rem;
+  --tab-radius: 0.375rem;
+}
+
+@plugin "daisyui/theme" {
+  name: "sunrise";
+  default: false;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: var(--color-sunrise-base-100);
+  --color-base-200: var(--color-sunrise-base-200);
+  --color-base-300: var(--color-sunrise-base-300);
+  --color-base-content: oklch(0.25 0.02 60);
+
+  --color-primary: var(--color-sunrise-primary);
+  --color-primary-content: oklch(0.98 0.01 30);
+
+  --color-secondary: var(--color-sunrise-secondary);
+  --color-secondary-content: oklch(0.98 0.01 150);
+
+  --color-accent: var(--color-sunrise-accent);
+  --color-accent-content: oklch(0.15 0.02 45);
+
+  --color-neutral: var(--color-sunrise-neutral);
+  --color-neutral-content: oklch(0.98 0.01 60);
+
+  --color-info: var(--color-sunrise-info);
+  --color-info-content: oklch(0.98 0.01 230);
+
+  --color-success: var(--color-sunrise-success);
+  --color-success-content: oklch(0.98 0.01 150);
+
+  --color-warning: var(--color-sunrise-warning);
+  --color-warning-content: oklch(0.15 0.02 85);
+
+  --color-error: var(--color-sunrise-error);
+  --color-error-content: oklch(0.98 0.01 25);
+
+  --rounded-box: 0.75rem;
+  --rounded-btn: 0.375rem;
+  --rounded-badge: 1rem;
+  --tab-radius: 0.375rem;
+}
+
+/* ============================================================================
+   Typography Classes (Commit-style)
+   ============================================================================ */
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.typography {
+  color: var(--tw-prose-body);
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+}
+
+.typography h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 2rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.typography h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.typography p {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.typography a {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: opacity 150ms;
+}
+
+.typography a:hover {
+  opacity: 0.8;
+}
+
+.typography pre {
+  border-radius: 0.75rem;
+  overflow-x: auto;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.typography code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8125rem;
+}
+
+.typography ul,
+.typography ol {
+  padding-left: 1.375rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.typography li {
+  padding-left: 0.625rem;
+  margin-top: 0.5rem;
+}
+
+/* ============================================================================
+   Layout Components
+   ============================================================================ */
+
+/* Fixed sidebar glow effect */
+.sidebar-glow {
+  position: absolute;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+}
+
+.sidebar-glow::before {
+  content: '';
+  position: absolute;
+  width: 180%;
+  height: 180%;
+  background: radial-gradient(
+    circle at 100% 0%,
+    oklch(0.75 0.18 280 / 0.15) 0%,
+    oklch(0.70 0.15 200 / 0.05) 50%,
+    transparent 70%
+  );
+}
+
+[data-theme="sunrise"] .sidebar-glow::before {
+  background: radial-gradient(
+    circle at 100% 0%,
+    oklch(0.60 0.20 30 / 0.1) 0%,
+    oklch(0.55 0.15 150 / 0.05) 50%,
+    transparent 70%
+  );
+}
+
+/* Timeline decoration */
+.timeline-line {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 6px;
+}
+
+.timeline-line svg {
+  height: 100%;
+  width: 6px;
+}
+
+/* ============================================================================
+   Button Styles (Commit-style embossed)
+   ============================================================================ */
+
+.btn-commit {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  font-size: 0.8125rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+  color: white;
+  background: oklch(0.75 0.18 280);
+  transition: all 150ms;
+}
+
+.btn-commit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0.375rem;
+  background: linear-gradient(to bottom, white/80%, white);
+  opacity: 0.1;
+  transition: opacity 150ms;
+}
+
+.btn-commit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0.375rem;
+  box-shadow: inset 0 1px 1px white;
+  opacity: 0.075;
+  transition: opacity 150ms;
+}
+
+.btn-commit:hover::before {
+  opacity: 0.15;
+}
+
+.btn-commit:hover::after {
+  opacity: 0.1;
+}
+
+[data-theme="sunrise"] .btn-commit {
+  background: oklch(0.60 0.20 30);
+}
+
+/* Icon link styles */
+.icon-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+  opacity: 0.7;
+  transition: opacity 150ms;
+}
+
+.icon-link:hover {
+  opacity: 1;
+}
+
+.icon-link svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   Card Styles (Commit-style)
+   ============================================================================ */
+
+.card-commit {
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  ring: 1px;
+  ring-color: oklch(0.90 0.02 280 / 0.1);
+  background: var(--color-base-200);
+  transition: all 150ms;
+}
+
+.card-commit:hover {
+  ring-color: oklch(0.90 0.02 280 / 0.2);
+}
+
+[data-theme="sunrise"] .card-commit {
+  ring-color: oklch(0.25 0.02 60 / 0.1);
+}
+
+[data-theme="sunrise"] .card-commit:hover {
+  ring-color: oklch(0.25 0.02 60 / 0.2);
+}
+
+/* ============================================================================
+   Utility Classes
+   ============================================================================ */
+
+/* Smooth transitions */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Code block styling */
+pre {
+  overflow-x: auto;
+  border-radius: 0.75rem;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+}
+
+/* Fade-in animation */
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Star twinkle animation */
+.star-twinkle {
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Section spacing (Commit-style) */
+.section-spacing {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+
+@media (min-width: 640px) {
+  .section-spacing {
+    padding-top: 8rem;
+    padding-bottom: 8rem;
+  }
+}
+
+/* Text balance for headings */
+.text-balance {
+  text-wrap: balance;
+}
