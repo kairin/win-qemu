@@ -24,6 +24,22 @@ set -euo pipefail
 # CONFIGURATION
 # ==============================================================================
 
+# Nerd Font Icons (using Unicode escapes for reliable encoding)
+ICON_CHECK=$'\uf00c'
+ICON_CROSS=$'\uf00d'
+ICON_WARN=$'\uf071'
+ICON_QUESTION=$'\uf128'
+ICON_INFO=$'\uf05a'
+ICON_STAR=$'\uf005'
+ICON_FILE=$'\uf15b'
+ICON_CLIPBOARD=$'\uf328'
+ICON_WRENCH=$'\uf0ad'
+ICON_PLAY=$'\uf04b'
+ICON_REFRESH=$'\uf021'
+ICON_BACK=$'\uf060'
+ICON_EXIT=$'\uf2f5'
+ICON_LIGHTBULB=$'\uf0eb'
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 STATE_DIR="${PROJECT_ROOT}/.installation-state"
@@ -131,7 +147,7 @@ check_gum_available() {
 
 # Check if gum is installed
 if ! check_gum_available && should_run_interactive; then
-    echo "❌ ERROR: 'gum' is required for interactive UI"
+    echo " ERROR: 'gum' is required for interactive UI"
     echo "Install with: go install github.com/charmbracelet/gum@latest"
     echo "Or run with --json-only or --automation flag"
     exit 1
@@ -139,7 +155,7 @@ fi
 
 # Check if jq is installed
 if ! command -v jq &> /dev/null; then
-    echo "⚠️  WARNING: 'jq' not found. Installing..."
+    echo " WARNING: 'jq' not found. Installing..."
     sudo apt install -y jq
 fi
 
@@ -150,7 +166,7 @@ show_header() {
     fi
 
     clear
-    cat <<EOF | gum style --border double --border-foreground 212 --padding "1 2" --margin "1 0"
+    cat <<EOF | gum style --border rounded --border-foreground 212 --padding "1 2" --margin "1 0" --width 76
 QEMU/KVM System Readiness Check
 42+ Point Automated Prerequisite Validation
 
@@ -199,18 +215,18 @@ display_check() {
 
     case "$status" in
         pass)
-            gum style --foreground 46 "  ✅ $message"
+            gum style --foreground 46 "  ${ICON_CHECK} $message"
             ;;
         fail)
-            gum style --foreground 196 "  ❌ $message"
+            gum style --foreground 196 "  ${ICON_CROSS} $message"
             if [ -n "$fix" ] && [ "$NO_FIXES" = false ]; then
-                gum style --foreground 226 --italic "     💡 Fix: $fix"
+                gum style --foreground 226 --italic "     ${ICON_LIGHTBULB} Fix: $fix"
             fi
             ;;
         warn)
-            gum style --foreground 226 "  ⚠️  $message"
+            gum style --foreground 226 "  ${ICON_WARN} $message"
             if [ -n "$fix" ] && [ "$NO_FIXES" = false ]; then
-                gum style --foreground 226 --italic "     💡 Recommendation: $fix"
+                gum style --foreground 226 --italic "     ${ICON_LIGHTBULB} Recommendation: $fix"
             fi
             ;;
     esac
@@ -247,7 +263,7 @@ check_cpu_cores() {
     local cores=$(nproc)
 
     if [ "$cores" -ge 8 ]; then
-        record_check "$name" "pass" "CPU cores: $cores (≥8 required, ✅ passed)" ""
+        record_check "$name" "pass" "CPU cores: $cores (≥8 required,  passed)" ""
     elif [ "$cores" -ge 4 ]; then
         record_check "$name" "warn" "CPU cores: $cores (8 recommended, VM may be slow)" "Allocate fewer vCPUs to VM or upgrade CPU"
     else
@@ -260,9 +276,9 @@ check_ram() {
     local ram_gb=$(free -g | awk '/^Mem:/ {print $2}')
 
     if [ "$ram_gb" -ge 32 ]; then
-        record_check "$name" "pass" "RAM: ${ram_gb}GB (≥32GB optimal, ✅ excellent)" ""
+        record_check "$name" "pass" "RAM: ${ram_gb}GB (≥32GB optimal,  excellent)" ""
     elif [ "$ram_gb" -ge 16 ]; then
-        record_check "$name" "pass" "RAM: ${ram_gb}GB (≥16GB required, ✅ passed)" ""
+        record_check "$name" "pass" "RAM: ${ram_gb}GB (≥16GB required,  passed)" ""
     elif [ "$ram_gb" -ge 8 ]; then
         record_check "$name" "warn" "RAM: ${ram_gb}GB (16GB recommended, VM may be slow)" "Upgrade to 16GB+ RAM for optimal performance"
     else
@@ -295,7 +311,7 @@ check_storage_space() {
     local free_gb=$(df -BG "$PROJECT_ROOT" | awk 'NR==2 {print $4}' | sed 's/G//')
 
     if [ "$free_gb" -ge 150 ]; then
-        record_check "$name" "pass" "Free space: ${free_gb}GB (≥150GB recommended, ✅ passed)" ""
+        record_check "$name" "pass" "Free space: ${free_gb}GB (≥150GB recommended,  passed)" ""
     elif [ "$free_gb" -ge 100 ]; then
         record_check "$name" "warn" "Free space: ${free_gb}GB (150GB recommended)" "Free up disk space or use different partition"
     else
@@ -325,7 +341,43 @@ check_kvm_module() {
         local kvm_type=$(lsmod | grep '^kvm' | awk '{print $1}' | head -n1)
         record_check "$name" "pass" "KVM kernel module loaded: $kvm_type" ""
     else
-        record_check "$name" "fail" "KVM kernel module not loaded" "Run: sudo modprobe kvm && sudo modprobe kvm_intel (or kvm_amd)"
+        # Detect CPU vendor for correct module
+        local cpu_vendor=""
+        if grep -q "AuthenticAMD" /proc/cpuinfo; then
+            cpu_vendor="amd"
+        elif grep -q "GenuineIntel" /proc/cpuinfo; then
+            cpu_vendor="intel"
+        fi
+
+        echo ""
+        echo "KVM kernel module is not loaded."
+        echo "CPU detected: ${cpu_vendor:-unknown}"
+        echo ""
+        read -p "Load KVM module now? (requires sudo) (y/n): " load_choice
+
+        if [[ "$load_choice" =~ ^[Yy]$ ]]; then
+            echo "Loading KVM modules..."
+            if [ "$cpu_vendor" = "amd" ]; then
+                if sudo modprobe kvm && sudo modprobe kvm_amd; then
+                    record_check "$name" "pass" "KVM kernel module loaded: kvm_amd" ""
+                    return
+                fi
+            elif [ "$cpu_vendor" = "intel" ]; then
+                if sudo modprobe kvm && sudo modprobe kvm_intel; then
+                    record_check "$name" "pass" "KVM kernel module loaded: kvm_intel" ""
+                    return
+                fi
+            else
+                # Try generic
+                if sudo modprobe kvm; then
+                    record_check "$name" "pass" "KVM kernel module loaded" ""
+                    return
+                fi
+            fi
+            record_check "$name" "fail" "Failed to load KVM module" "Check if virtualization is enabled in BIOS"
+        else
+            record_check "$name" "fail" "KVM kernel module not loaded" "Run: sudo modprobe kvm && sudo modprobe kvm_${cpu_vendor:-intel}"
+        fi
     fi
 }
 
@@ -486,9 +538,9 @@ check_dns_resolution() {
 check_windows_iso() {
     local name="windows_iso"
 
-    # Check common locations
+    # Check common locations (source-iso first, where create-vm.sh expects it)
     local found=false
-    for dir in "$HOME/ISOs" "$HOME/Downloads" "$PROJECT_ROOT/isos"; do
+    for dir in "$PROJECT_ROOT/source-iso" "$HOME/ISOs" "$HOME/Downloads" "$PROJECT_ROOT/isos"; do
         if [ -d "$dir" ]; then
             if find "$dir" -iname "*win*.iso" -o -iname "*windows*.iso" 2>/dev/null | grep -q .; then
                 local iso_file=$(find "$dir" -iname "*win*.iso" -o -iname "*windows*.iso" 2>/dev/null | head -n1)
@@ -507,9 +559,9 @@ check_windows_iso() {
 check_virtio_drivers_iso() {
     local name="virtio_drivers_iso"
 
-    # Check common locations
+    # Check common locations (source-iso/ first, where create-vm.sh expects it)
     local found=false
-    for dir in "$HOME/ISOs" "$HOME/Downloads" "$PROJECT_ROOT/isos"; do
+    for dir in "$PROJECT_ROOT/source-iso" "$HOME/ISOs" "$HOME/Downloads" "$PROJECT_ROOT/isos"; do
         if [ -d "$dir" ]; then
             if find "$dir" -iname "*virtio*.iso" 2>/dev/null | grep -q .; then
                 local iso_file=$(find "$dir" -iname "*virtio*.iso" 2>/dev/null | head -n1)
@@ -521,7 +573,29 @@ check_virtio_drivers_iso() {
     done
 
     if [ "$found" = false ]; then
-        record_check "$name" "warn" "VirtIO drivers ISO not found in common locations" "Download from: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/"
+        # Offer to download automatically
+        local target_dir="$PROJECT_ROOT/source-iso"
+        local target_file="$target_dir/virtio-win.iso"
+        local download_url="https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso"
+
+        echo ""
+        echo "VirtIO drivers ISO not found."
+        echo "File needed: virtio-win.iso (~600MB)"
+        echo "Target location: $target_file"
+        echo ""
+        read -p "Download now? (y/n): " download_choice
+
+        if [[ "$download_choice" =~ ^[Yy]$ ]]; then
+            mkdir -p "$target_dir"
+            echo "Downloading (resume supported with wget -c)..."
+            if wget -c --show-progress -O "$target_file" "$download_url"; then
+                record_check "$name" "pass" "VirtIO drivers ISO downloaded: $target_file" ""
+            else
+                record_check "$name" "fail" "Download failed" "Manually download from: $download_url"
+            fi
+        else
+            record_check "$name" "warn" "VirtIO drivers ISO not found" "Run: wget -c -O $target_file $download_url"
+        fi
     fi
 }
 
@@ -720,26 +794,26 @@ show_summary() {
     echo ""
     local pass_rate
     pass_rate=$(awk "BEGIN {printf \"%.1f%%\", ($PASSED_CHECKS/$TOTAL_CHECKS)*100}")
-    cat <<EOF | gum style --border double --border-foreground 212 --padding "1 2" --margin "1 0"
+    cat <<EOF | gum style --border rounded --border-foreground 212 --padding "1 2" --margin "1 0" --width 76
 Readiness Check Complete
 
 Total Checks: $TOTAL_CHECKS
-✅ Passed: $PASSED_CHECKS
-❌ Failed: $FAILED_CHECKS
-⚠️  Warnings: $WARNING_CHECKS
+${ICON_CHECK} Passed: $PASSED_CHECKS
+${ICON_CROSS} Failed: $FAILED_CHECKS
+${ICON_WARN} Warnings: $WARNING_CHECKS
 
 Pass Rate: $pass_rate
 EOF
 
     echo ""
     if [ "$FAILED_CHECKS" -eq 0 ]; then
-        gum style --foreground 46 --bold "🎉 System is READY for QEMU/KVM deployment!"
+        gum style --foreground 46 --bold "${ICON_STAR} System is READY for QEMU/KVM deployment!"
         echo ""
         gum style --foreground 117 "Next steps:"
         echo "  1. Create VM: ./scripts/create-vm.sh"
         echo "  2. Or use automation: ./scripts/install-master.sh"
     else
-        gum style --foreground 196 --bold "⚠️  System is NOT READY - please fix failed checks"
+        gum style --foreground 196 --bold "${ICON_WARN} System is NOT READY - please fix failed checks"
         echo ""
         gum style --foreground 226 "Recommended action:"
         echo "  Run: sudo ./scripts/01-install-qemu-kvm.sh"
@@ -748,7 +822,7 @@ EOF
     fi
 
     echo ""
-    gum style --foreground 86 "📄 JSON report saved: $REPORT_FILE"
+    gum style --foreground 86 "${ICON_FILE} JSON report saved: $REPORT_FILE"
 }
 
 # ==============================================================================
@@ -770,8 +844,8 @@ show_fix_instructions() {
         local fix="${CHECK_FIXES[$check_name]}"
 
         if [[ "$status" == "fail" && -n "$fix" ]]; then
-            gum style --foreground 196 "❌ ${CHECK_MESSAGES[$check_name]}"
-            gum style --foreground 226 --italic "   💡 Fix: $fix"
+            gum style --foreground 196 " ${CHECK_MESSAGES[$check_name]}"
+            gum style --foreground 226 --italic "    Fix: $fix"
             echo ""
         fi
     done
@@ -781,8 +855,8 @@ show_fix_instructions() {
         local fix="${CHECK_FIXES[$check_name]}"
 
         if [[ "$status" == "warn" && -n "$fix" ]]; then
-            gum style --foreground 226 "⚠️  ${CHECK_MESSAGES[$check_name]}"
-            gum style --foreground 226 --italic "   💡 Recommendation: $fix"
+            gum style --foreground 226 " ${CHECK_MESSAGES[$check_name]}"
+            gum style --foreground 226 --italic "    Recommendation: $fix"
             echo ""
         fi
     done
@@ -798,44 +872,44 @@ show_interactive_menu() {
     local options=()
 
     # All statuses can view detailed report
-    options+=("📋 View JSON Report")
+    options+=("${ICON_CLIPBOARD} View JSON Report")
 
     # Show fix instructions if there are issues
     if [[ "$FAILED_CHECKS" -gt 0 || "$WARNING_CHECKS" -gt 0 ]]; then
-        options+=("🔧 Show All Fix Instructions")
+        options+=("${ICON_WRENCH} Show All Fix Instructions")
     fi
 
     # Only non-blocking can continue
     if [[ "$FAILED_CHECKS" -eq 0 ]]; then
-        options+=("▶️  Continue (Ready to Create VM)")
+        options+=("${ICON_PLAY} Continue (Ready to Create VM)")
     else
-        options+=("▶️  Continue Anyway (Not Recommended)")
+        options+=("${ICON_PLAY} Continue Anyway (Not Recommended)")
     fi
 
     # Always allow retry and navigation
-    options+=("🔄 Retry All Checks")
-    options+=("← Back to Main Menu")
-    options+=("🚪 Exit")
+    options+=("${ICON_REFRESH} Retry All Checks")
+    options+=("${ICON_BACK} Back to Main Menu")
+    options+=("${ICON_EXIT} Exit")
 
     # Status display
     local status_color=46
-    local status_emoji="✅"
+    local status_emoji="${ICON_CHECK}"
     local status_label="ALL CHECKS PASSED"
 
     if [[ "$FAILED_CHECKS" -gt 0 ]]; then
         status_color=196
-        status_emoji="❌"
+        status_emoji="${ICON_CROSS}"
         status_label="ERRORS DETECTED - Please Fix Before Continuing"
     elif [[ "$WARNING_CHECKS" -gt 0 ]]; then
         status_color=226
-        status_emoji="⚠️"
+        status_emoji="${ICON_WARN}"
         status_label="PASSED WITH WARNINGS"
     fi
 
     cat <<EOF | gum style --border rounded --border-foreground "$status_color" --padding "1 2" --margin "1 0"
 $status_emoji $status_label
 
-✅ Passed: $PASSED_CHECKS | ⚠️ Warnings: $WARNING_CHECKS | ❌ Failed: $FAILED_CHECKS
+${ICON_CHECK} Passed: $PASSED_CHECKS | ${ICON_WARN} Warnings: $WARNING_CHECKS | ${ICON_CROSS} Failed: $FAILED_CHECKS
 EOF
 
     echo ""
@@ -846,7 +920,7 @@ EOF
     choice=$(printf '%s\n' "${options[@]}" | gum choose)
 
     case "$choice" in
-        "📋 View JSON Report")
+        "${ICON_CLIPBOARD} View JSON Report")
             if [[ -f "$REPORT_FILE" ]]; then
                 gum pager < "$REPORT_FILE"
             else
@@ -855,7 +929,7 @@ EOF
             # Return to menu
             show_interactive_menu "$status"
             ;;
-        "🔧 Show All Fix Instructions")
+        "${ICON_WRENCH} Show All Fix Instructions")
             show_fix_instructions
             echo ""
             gum style --foreground 240 "Press any key to continue..."
@@ -863,18 +937,18 @@ EOF
             # Return to menu
             show_interactive_menu "$status"
             ;;
-        "▶️  Continue"*|"Continue"*)
+        "${ICON_PLAY} Continue"*|"Continue"*)
             return 0  # Continue
             ;;
-        "🔄 Retry All Checks")
+        "${ICON_REFRESH} Retry All Checks")
             return 1  # Retry
             ;;
-        "← Back to Main Menu")
+        "${ICON_BACK} Back to Main Menu")
             return 2  # Back
             ;;
-        "🚪 Exit"|"")
+        "${ICON_EXIT} Exit"|"")
             echo ""
-            gum style --foreground 212 "Goodbye! 👋"
+            gum style --foreground 212 "Goodbye!"
             exit 0
             ;;
     esac
