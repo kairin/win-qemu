@@ -1,10 +1,12 @@
 # Source ISO Files
 
-This directory contains installation media and dependencies required for QEMU/KVM Windows virtualization. **Files in this directory are excluded from Git** due to size and licensing restrictions.
+This directory is a **staging area** for downloading installation media. After download, ISOs must be moved to `/var/lib/libvirt/images/iso/` for libvirt access.
+
+**Files in this directory are excluded from Git** due to size and licensing restrictions.
 
 ## Required Files
 
-Download the following files and place them in this directory:
+Download the following files:
 
 ### 1. Windows 11 ISO (Required)
 - **File**: `Win11_25H2_English_x64.iso` (or latest version)
@@ -48,6 +50,25 @@ These files are automatically excluded via `.gitignore`:
 - `*.iso` - Windows and VirtIO ISOs
 - `*.exe` - Microsoft Office setup
 - `*.deb` - CrossOver package
+
+## Setup: Move ISOs to libvirt Location
+
+After downloading, move ISOs to the runtime location for libvirt/QEMU access:
+
+```bash
+# Create directory (one-time)
+sudo mkdir -p /var/lib/libvirt/images/iso
+
+# Move ISOs with standardized names
+sudo mv source-iso/Win11_25H2_English_x64.iso /var/lib/libvirt/images/iso/Win11.iso
+sudo mv source-iso/virtio-win-*.iso /var/lib/libvirt/images/iso/virtio-win.iso
+
+# Set permissions
+sudo chown root:kvm /var/lib/libvirt/images/iso/*.iso
+sudo chmod 640 /var/lib/libvirt/images/iso/*.iso
+```
+
+**Why?** The `libvirt-qemu` user cannot access files in your home directory for security reasons. Moving ISOs to `/var/lib/libvirt/images/iso/` provides proper isolation.
 
 ## Usage
 

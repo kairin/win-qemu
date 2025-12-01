@@ -329,7 +329,7 @@
     <!--
       CDROM 1: Windows 11 Installation ISO
 
-      Path: USER_HOME/win-qemu/source-iso/Win11.iso
+      Path: /var/lib/libvirt/images/iso/Win11.iso
 
       Download from: https://www.microsoft.com/software-download/windows11
 
@@ -338,7 +338,7 @@
     -->
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>
-      <source file='USER_HOME/win-qemu/source-iso/Win11.iso'/>
+      <source file='/var/lib/libvirt/images/iso/Win11.iso'/>
       <target dev='hdb' bus='sata'/>
       <readonly/>
       <address type='drive' controller='0' bus='0' target='0' unit='1'/>
@@ -347,7 +347,7 @@
     <!--
       CDROM 2: VirtIO Drivers ISO
 
-      Path: USER_HOME/win-qemu/source-iso/virtio-win.iso
+      Path: /var/lib/libvirt/images/iso/virtio-win.iso
 
       Download from: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/
 
@@ -359,7 +359,7 @@
     -->
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>
-      <source file='USER_HOME/win-qemu/source-iso/virtio-win.iso'/>
+      <source file='/var/lib/libvirt/images/iso/virtio-win.iso'/>
       <target dev='hdc' bus='sata'/>
       <readonly/>
       <address type='drive' controller='0' bus='0' target='0' unit='2'/>

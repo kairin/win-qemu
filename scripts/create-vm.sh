@@ -37,7 +37,7 @@
 #   - QEMU/KVM installed (qemu-system-x86, libvirt, etc.)
 #   - Hardware virtualization enabled (Intel VT-x or AMD-V)
 #   - Minimum 16GB RAM, 8 CPU cores, SSD storage
-#   - Windows 11 ISO and VirtIO drivers ISO in source-iso/ directory
+#   - Windows 11 ISO and VirtIO drivers ISO in /var/lib/libvirt/images/iso/
 #
 # AUTHOR: win-qemu project
 # VERSION: 1.0.0
@@ -62,7 +62,7 @@ DEFAULT_DISK_GB="100"
 
 # Directories (using PROJECT_ROOT from common.sh)
 CONFIG_TEMPLATE="${PROJECT_ROOT}/configs/win11-vm.xml"
-SOURCE_ISO_DIR="${PROJECT_ROOT}/source-iso"
+SOURCE_ISO_DIR="/var/lib/libvirt/images/iso"
 VM_IMAGES_DIR="/var/lib/libvirt/images"
 NVRAM_DIR="/var/lib/libvirt/qemu/nvram"
 TPM_DIR="/var/lib/libvirt/swtpm"
@@ -85,8 +85,8 @@ OPTIONS:
     --ram MB           RAM in MB (default: 8192)
     --vcpus NUM        Number of vCPUs (default: 4)
     --disk GB          Disk size in GB (default: 100)
-    --iso PATH         Windows ISO path (default: source-iso/Win11.iso)
-    --virtio-iso PATH  VirtIO drivers ISO (default: source-iso/virtio-win.iso)
+    --iso PATH         Windows ISO path (default: /var/lib/libvirt/images/iso/Win11.iso)
+    --virtio-iso PATH  VirtIO drivers ISO (default: /var/lib/libvirt/images/iso/virtio-win.iso)
     --dry-run          Validate without creating VM
     --help             Show this help message
 
@@ -98,11 +98,12 @@ PREREQUISITES:
        - Run: sudo usermod -aG libvirt,kvm $USER
        - Then logout/login or reboot
 
-    3. ISOs (place in source-iso/ directory):
+    3. ISOs (in /var/lib/libvirt/images/iso/):
        - Win11.iso: Windows 11 installation media
          Download: https://www.microsoft.com/software-download/windows11
        - virtio-win.iso: VirtIO drivers for Windows
          Download: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/
+       - Setup: sudo mv source-iso/*.iso /var/lib/libvirt/images/iso/
 
     4. Permissions:
        - User must be in 'libvirt' and 'kvm' groups
@@ -174,7 +175,7 @@ PERFORMANCE EXPECTATIONS:
 
 TROUBLESHOOTING:
     - Permission denied: Ensure user in libvirt/kvm groups, run with sudo
-    - ISOs not found: Place ISOs in source-iso/ directory with exact names
+    - ISOs not found: Place ISOs in /var/lib/libvirt/images/iso/ with exact names
     - VM already exists: Use different --name or delete existing VM
     - libvirtd not running: sudo systemctl start libvirtd
 
