@@ -46,10 +46,10 @@ report_result() {
     local notes="$4"
     
     if [[ "$status" == "PASS" ]]; then
-        echo "| \`$script\` | ✅ PASS | $exit_code | $notes |" >> "$REPORT_FILE"
+        echo "| \`$script\` |  PASS | $exit_code | $notes |" >> "$REPORT_FILE"
         log_msg "${GREEN}[PASS]${NC} $script"
     else
-        echo "| \`$script\` | ❌ FAIL | $exit_code | $notes |" >> "$REPORT_FILE"
+        echo "| \`$script\` |  FAIL | $exit_code | $notes |" >> "$REPORT_FILE"
         log_msg "${RED}[FAIL]${NC} $script (Exit: $exit_code)"
     fi
 }

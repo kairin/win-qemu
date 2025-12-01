@@ -104,11 +104,11 @@ get_status_emoji() {
     local status="$1"
 
     case "$status" in
-        "$RESULT_PASS")     echo "✅" ;;
-        "$RESULT_WARNING")  echo "⚠️" ;;
-        "$RESULT_ERROR")    echo "❌" ;;
-        "$RESULT_CRITICAL") echo "🚨" ;;
-        *)                  echo "❓" ;;
+        "$RESULT_PASS")     echo "" ;;
+        "$RESULT_WARNING")  echo "" ;;
+        "$RESULT_ERROR")    echo "" ;;
+        "$RESULT_CRITICAL") echo "" ;;
+        *)                  echo "" ;;
     esac
 }
 
@@ -165,22 +165,22 @@ show_result_menu() {
     local options=()
 
     # All statuses can view details
-    options+=("📋 View Detailed Report")
+    options+=(" View Detailed Report")
 
     # Only non-critical can continue
     if [[ "$status" != "$RESULT_CRITICAL" ]]; then
-        options+=("▶️  Continue Anyway")
+        options+=(" Continue Anyway")
     fi
 
     # Show fix instructions if there are issues
     if [[ "$status" != "$RESULT_PASS" ]]; then
-        options+=("🔧 Show Fix Instructions")
+        options+=(" Show Fix Instructions")
     fi
 
     # Always allow retry and navigation
-    options+=("🔄 Retry Checks")
-    options+=("← Back to ${parent_menu}")
-    options+=("🚪 Exit")
+    options+=(" Retry Checks")
+    options+=(" Back to ${parent_menu}")
+    options+=(" Exit")
 
     echo ""
 
@@ -227,22 +227,22 @@ show_result_menu() {
 
     # Process choice
     case "$choice" in
-        "📋 View Detailed Report")
+        " View Detailed Report")
             return 10  # Special code: show report, then re-show menu
             ;;
-        "▶️  Continue Anyway")
+        " Continue Anyway")
             return 0   # Continue with execution
             ;;
-        "🔧 Show Fix Instructions")
+        " Show Fix Instructions")
             return 11  # Special code: show fixes, then re-show menu
             ;;
-        "🔄 Retry Checks")
+        " Retry Checks")
             return 1   # Retry
             ;;
-        "← Back to"*|"← Back"*)
+        " Back to"*|" Back"*)
             return 2   # Back to parent menu
             ;;
-        "🚪 Exit"|"")
+        " Exit"|"")
             return 3   # Exit cleanly
             ;;
         *)
@@ -270,10 +270,10 @@ show_simple_result_menu() {
 
         local choice
         choice=$(gum choose \
-            "▶️  Continue" \
-            "🔄 Retry" \
-            "← Back to ${parent_menu}" \
-            "🚪 Exit")
+            " Continue" \
+            " Retry" \
+            " Back to ${parent_menu}" \
+            " Exit")
     else
         echo "$message"
         echo ""
@@ -283,17 +283,17 @@ show_simple_result_menu() {
         echo "4) Exit"
         read -r -p "Choice: " choice_num
         case "$choice_num" in
-            1) choice="▶️  Continue" ;;
-            2) choice="🔄 Retry" ;;
-            3) choice="← Back" ;;
-            *) choice="🚪 Exit" ;;
+            1) choice=" Continue" ;;
+            2) choice=" Retry" ;;
+            3) choice=" Back" ;;
+            *) choice=" Exit" ;;
         esac
     fi
 
     case "$choice" in
-        "▶️  Continue") return 0 ;;
-        "🔄 Retry") return 1 ;;
-        "← Back"*) return 2 ;;
+        " Continue") return 0 ;;
+        " Retry") return 1 ;;
+        " Back"*) return 2 ;;
         *) return 3 ;;
     esac
 }
@@ -360,7 +360,7 @@ handle_check_results() {
             3)  # Exit
                 echo ""
                 if has_gum; then
-                    gum style --foreground 212 "Goodbye! 👋"
+                    gum style --foreground 212 "Goodbye!"
                 else
                     echo "Goodbye!"
                 fi

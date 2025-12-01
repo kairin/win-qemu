@@ -158,11 +158,11 @@ COLOR_CYAN='\033[0;36m'
 COLOR_MAGENTA='\033[0;35m'
 
 # Icons
-ICON_SUCCESS="✅"
-ICON_ERROR="❌"
-ICON_WARNING="⚠️ "
-ICON_INFO="ℹ️ "
-ICON_ROCKET="🚀"
+ICON_SUCCESS=""
+ICON_ERROR=""
+ICON_WARNING=""
+ICON_INFO=""
+ICON_ROCKET=""
 
 
 confirm() {
