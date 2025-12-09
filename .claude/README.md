@@ -46,7 +46,7 @@ Run native Microsoft 365 Outlook on Ubuntu 25.10 with **85-95% native performanc
 
 ---
 
-## Agent Hierarchy (84 agents)
+## Agent Hierarchy (85 agents)
 
 ```
 Tier 0 Workflow Agents (10 Sonnet - Zero-Config Automation)
@@ -76,7 +76,7 @@ Tier 0 Workflow Agents (10 Sonnet - Zero-Config Automation)
 │   ├── 011-cleanup          → 111-114 (redundancy, scripts, archive, metrics)
 │   └── 012-astro            → 121-*, 122-* (precheck, build, validate, nojekyll, deploy)
 │
-└── Tier 4 Execution (60 Haiku atomic agents)
+└── Tier 4 Execution (63 Haiku atomic agents)
     └── Single-task specialists for parallel execution
 ```
 
@@ -107,7 +107,7 @@ Tier 0 Workflow Agents (10 Sonnet - Zero-Config Automation)
 .claude/
 ├── README.md                    # This file (quick reference)
 ├── settings.local.json          # MCP permissions & configuration
-├── agents/                      # 84 agent definitions
+├── agents/                      # 85 agent definitions
 │   ├── 000-*.md                 # Tier 0 (10 Workflow orchestrators)
 │   ├── 001-orchestrator.md      # Tier 1 (Opus)
 │   ├── 002-012-*.md             # Tier 2 (Sonnet specialists)
@@ -134,7 +134,7 @@ Tier 0 Workflow Agents (10 Sonnet - Zero-Config Automation)
 
 ## Version
 
-- **Agents**: 84 total (10 Workflow + 1 Opus + 11 Sonnet + 62 Haiku)
+- **Agents**: 85 total (10 Workflow + 1 Opus + 11 Sonnet + 63 Haiku)
 - **Slash Commands**: Archived (invoke 000-* agents directly via Task tool)
 - **Rules**: Tailwind CSS v4 + DaisyUI
-- **Last Updated**: 2025-11-30
+- **Last Updated**: 2025-12-09

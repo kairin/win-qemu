@@ -41,7 +41,7 @@ The win-qemu agent system automates QEMU/KVM Windows virtualization on Ubuntu wi
 | project-health-auditor | Health checks, Context7 MCP |
 | repository-cleanup-specialist | Redundancy detection |
 
-### QEMU/KVM Specialized (6 agents)
+### QEMU/KVM Specialized (7 agents)
 
 | Agent | Purpose |
 |-------|---------|
@@ -51,6 +51,7 @@ The win-qemu agent system automates QEMU/KVM Windows virtualization on Ubuntu wi
 | virtio-fs-specialist | Filesystem sharing, PST access |
 | qemu-automation-specialist | QEMU guest agent automation |
 | qemu-health-checker | System readiness validation |
+| **virtio-gpu-install** | **VirtIO GPU driver installation (NEW)** |
 
 ---
 
