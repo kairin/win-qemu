@@ -16,10 +16,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <div class="rounded-xl bg-primary/10 p-5 ring-1 ring-primary/20">
       <div class="flex items-center gap-4">
         <span class="badge badge-primary">Latest</span>
-        <span class="text-xl font-semibold">v1.0.0</span>
-        <span class="text-base-content/50">November 2025</span>
+        <span class="text-xl font-semibold">v1.1.0</span>
+        <span class="text-base-content/50">December 2025</span>
       </div>
-      <p class="mt-2 text-sm text-base-content/70">Initial release with complete QEMU/KVM Windows 11 virtualization stack</p>
+      <p class="mt-2 text-sm text-base-content/70">VirtIO GPU driver fix, 85-agent system, and enhanced post-installation guidance</p>
     </div>
   </section>
 
@@ -28,6 +28,34 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <h3 class="font-display text-lg font-semibold text-base-content">Release History</h3>
 
     <div class="mt-6 space-y-6">
+      <!-- December 9, 2025 -->
+      <div class="relative pl-6 before:absolute before:left-0 before:top-2 before:h-3 before:w-3 before:rounded-full before:bg-success">
+        <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5">
+          <time class="text-xs text-base-content/50">December 9, 2025</time>
+          <h4 class="mt-1 font-semibold">VirtIO GPU Driver Resolution Fix</h4>
+          <p class="mt-1 text-sm text-base-content/70">Resolved Windows display stuck at 1280x800</p>
+          <ul class="mt-2 space-y-1 text-sm text-base-content/70">
+            <li>VirtIO GPU driver installation guide added</li>
+            <li>New agent: 066-virtio-gpu-install</li>
+            <li>Post-installation checklist in TUI</li>
+            <li>Agent system now has 85 agents</li>
+            <li>VRAM configuration in VM creation wizard</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- December 2, 2025 -->
+      <div class="relative pl-6 before:absolute before:left-0 before:top-2 before:h-3 before:w-3 before:rounded-full before:bg-info">
+        <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5">
+          <time class="text-xs text-base-content/50">December 2, 2025</time>
+          <h4 class="mt-1 font-semibold">Security & Documentation Updates</h4>
+          <ul class="mt-2 space-y-1 text-sm text-base-content/70">
+            <li>ISO paths moved to /var/lib/libvirt/images/iso/ for security</li>
+            <li>Documentation site rebuilt with latest dependencies</li>
+          </ul>
+        </div>
+      </div>
+
       <!-- November 30 -->
       <div class="relative pl-6 before:absolute before:left-0 before:top-2 before:h-3 before:w-3 before:rounded-full before:bg-primary">
         <div class="rounded-xl bg-base-200 p-4 ring-1 ring-base-content/5">

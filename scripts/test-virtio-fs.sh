@@ -9,7 +9,7 @@
 #
 # USAGE:
 #   # On Ubuntu host:
-#   sudo ./scripts/test-virtio-fs.sh --vm <vm-name> --source /home/user/outlook-data
+#   sudo ./scripts/test-virtio-fs.sh --vm <vm-name> --source ~/Documents
 #
 #   # In Windows guest (PowerShell as Administrator):
 #   # Run the commands shown in the output
@@ -34,9 +34,31 @@ source "$SCRIPT_DIR/lib/common.sh"
 # Compatibility aliases
 readonly RESET=$NC
 
+# Get user home directory (works correctly with sudo)
+_get_user_home() {
+    if [[ -n "${SUDO_USER:-}" ]]; then
+        eval echo "~$SUDO_USER"
+    else
+        echo "$HOME"
+    fi
+}
+
+# Get XDG Documents folder with fallback
+_get_documents_dir() {
+    local xdg_docs=""
+    if command -v xdg-user-dir &>/dev/null; then
+        xdg_docs="$(xdg-user-dir DOCUMENTS 2>/dev/null)"
+    fi
+    if [[ -n "$xdg_docs" && -d "$xdg_docs" ]]; then
+        echo "$xdg_docs"
+    else
+        echo "$(_get_user_home)/Documents"
+    fi
+}
+
 # Configuration
 VM_NAME=""
-SOURCE_DIR="/home/user/outlook-data"
+SOURCE_DIR="$(_get_documents_dir)"
 TARGET_TAG="outlook-share"
 
 # Test results
@@ -78,7 +100,7 @@ ${BOLD}USAGE:${RESET}
 
 ${BOLD}OPTIONS:${RESET}
     --vm <name>           VM name (REQUIRED)
-    --source <path>       Source directory (default: /home/user/outlook-data)
+    --source <path>       Source directory (default: XDG Documents folder)
     --target <tag>        Mount tag (default: outlook-share)
     --help                Show this help message
 

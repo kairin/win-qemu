@@ -1,7 +1,7 @@
 # Multi-Agent System
 
 ## Overview
-An 84-agent 5-tier hierarchical system optimized for QEMU/KVM workflows with ~48% token cost reduction vs flat architecture.
+An 85-agent 5-tier hierarchical system optimized for QEMU/KVM workflows with ~48% token cost reduction vs flat architecture.
 
 ## 5-Tier Hierarchy
 
@@ -41,14 +41,14 @@ Zero-config automation for common workflows.
 | 011 | cleanup | Redundant file removal | 111-114 |
 | 012 | astro | Astro/GitHub Pages | 121-*, 122-* |
 
-### Tier 4: Task Executors (Haiku) - 62 Agents
+### Tier 4: Task Executors (Haiku) - 63 Agents
 Specialized single-task agents invoked by parent Sonnet agents:
 
 - **02X VM Operations**: 021-025 (create, configure, lifecycle, validate, snapshot)
 - **03X Performance**: 031-035 (Hyper-V, CPU pin, hugepages, I/O, benchmark)
 - **04X Security**: 041-046 (LUKS, firewall, BitLocker, virtio-fs RO, audit, backup)
 - **05X VirtIO-FS**: 051-055 (setup, WinFsp, mount, PST test, troubleshoot)
-- **06X Automation**: 061-065 (GA install, virsh commands, polling, host-guest, scripts)
+- **06X Automation**: 061-066 (GA install, virsh commands, file transfer, clipboard, display, VirtIO GPU)
 - **07X Health**: 071-076 (hardware, QEMU stack, VirtIO, network, report, setup guide)
 - **08X Prerequisites**: 081-085 (packages, groups, libvirtd, VirtIO ISO, Win ISO)
 - **09X Git**: 091-095 (branch, commit, merge, conflict, sync)

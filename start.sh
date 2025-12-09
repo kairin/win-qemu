@@ -58,10 +58,75 @@ readonly STATE_FILE="$STATE_DIR/wizard-progress"
 readonly HARDWARE_STATE="$STATE_DIR/hardware-check"
 readonly SOFTWARE_STATE="$STATE_DIR/software-check"
 readonly VM_STATE="$STATE_DIR/vm-info"
+readonly ISO_DIR="$PROJECT_ROOT/source-iso"
 
 ################################################################################
 # Utility Functions
 ################################################################################
+
+# Find all ISO files in the source-iso directory
+find_iso_files() {
+    local iso_dir="${1:-$ISO_DIR}"
+    if [ -d "$iso_dir" ]; then
+        find "$iso_dir" -maxdepth 1 -type f -iname "*.iso" 2>/dev/null | sort
+    fi
+}
+
+# Interactive ISO selection with dropdown
+# Usage: select_iso "Windows 11" "win11|windows"
+# Returns selected path via stdout
+select_iso() {
+    local label="$1"
+    local pattern="$2"  # regex pattern for auto-matching
+
+    # Scan for ISOs
+    local iso_files=()
+    while IFS= read -r file; do
+        [ -n "$file" ] && iso_files+=("$file")
+    done < <(find_iso_files)
+
+    # Build menu options
+    local options=()
+    local suggested=""
+
+    for iso in "${iso_files[@]}"; do
+        local basename=$(basename "$iso")
+        options+=("$iso")
+        # Auto-detect suggested option based on pattern
+        if [[ "${basename,,}" =~ $pattern ]] && [ -z "$suggested" ]; then
+            suggested="$iso"
+        fi
+    done
+
+    # Add manual entry option
+    options+=("Enter path manually...")
+
+    if [ ${#iso_files[@]} -eq 0 ]; then
+        show_warning "No ISO files found in $ISO_DIR"
+        echo ""
+        show_info "Please enter the path manually:"
+        gum input --placeholder "/path/to/$label.iso"
+        return
+    fi
+
+    echo "Found ${#iso_files[@]} ISO file(s)" >&2
+    echo "" >&2
+
+    # Show dropdown
+    local selected
+    if [ -n "$suggested" ]; then
+        selected=$(printf '%s\n' "${options[@]}" | gum choose --header "Select $label ISO:" --selected "$suggested")
+    else
+        selected=$(printf '%s\n' "${options[@]}" | gum choose --header "Select $label ISO:")
+    fi
+
+    # Handle manual entry
+    if [[ "$selected" == "Enter path manually..."* ]]; then
+        selected=$(gum input --placeholder "/path/to/$label.iso")
+    fi
+
+    echo "$selected"
+}
 
 ensure_gum() {
     if ! command -v gum &> /dev/null; then
@@ -202,6 +267,35 @@ show_back_option() {
         return 0
     fi
     return 1
+}
+
+# Check if libvirt-qemu can access a file path
+check_iso_permissions() {
+    local iso_path="$1"
+    local iso_name="$2"
+
+    # Check if libvirt-qemu user can read the file
+    if ! sudo -u libvirt-qemu test -r "$iso_path" 2>/dev/null; then
+        show_error "Permission denied: libvirt-qemu cannot access $iso_name"
+        echo ""
+        show_warning "The hypervisor runs as 'libvirt-qemu' and needs read access to ISO files."
+        echo ""
+
+        # Find which directory is blocking access
+        local current_path="$iso_path"
+        while [[ "$current_path" != "/" ]]; do
+            if ! sudo -u libvirt-qemu test -x "$(dirname "$current_path")" 2>/dev/null; then
+                local blocking_dir=$(dirname "$current_path")
+                show_info "Blocked at: $blocking_dir"
+                echo ""
+                show_info "Fix with: sudo setfacl -m u:libvirt-qemu:x $blocking_dir"
+                break
+            fi
+            current_path=$(dirname "$current_path")
+        done
+        return 1
+    fi
+    return 0
 }
 
 save_state() {
@@ -615,49 +709,112 @@ create_vm_wizard() {
     local disk_gb=$(gum input --placeholder "100" --value "100")
     disk_gb=${disk_gb:-100}
 
-    # Step 3: ISO Paths
+    echo ""
+    echo "Video VRAM (MB) - for display resolution:"
+    show_info "256=4K, 512=multi-display, 1024+=power user, 4096=maximum"
+    local vram_mb=$(gum input --placeholder "256" --value "256")
+    vram_mb=${vram_mb:-256}
+
+    # Step 2: ISO Selection
     echo ""
     show_section "Step 2: Installation Media"
 
-    echo "Windows 11 ISO path:"
-    local win11_iso=$(gum input --placeholder "/path/to/Win11.iso")
+    # Scan and display ISO selection
+    local win11_iso
+    win11_iso=$(select_iso "Windows 11" "win11|windows")
 
-    if [ ! -f "$win11_iso" ]; then
+    if [ -z "$win11_iso" ] || [ ! -f "$win11_iso" ]; then
         show_error "Windows 11 ISO not found: $win11_iso"
         echo ""
         show_info "Download from: https://www.microsoft.com/software-download/windows11"
         pause_for_user
         return 1
     fi
+    show_success "Selected: $(basename "$win11_iso")"
 
     echo ""
-    echo "VirtIO drivers ISO path:"
-    local virtio_iso=$(gum input --placeholder "/path/to/virtio-win.iso")
+    local virtio_iso
+    virtio_iso=$(select_iso "VirtIO drivers" "virtio")
 
-    if [ ! -f "$virtio_iso" ]; then
+    if [ -z "$virtio_iso" ] || [ ! -f "$virtio_iso" ]; then
         show_error "VirtIO drivers ISO not found: $virtio_iso"
         echo ""
         show_info "Download from: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/"
         pause_for_user
         return 1
     fi
+    show_success "Selected: $(basename "$virtio_iso")"
+
+    # Step 2.5: Verify libvirt-qemu can access ISOs
+    echo ""
+    show_info "Verifying hypervisor permissions..."
+
+    if ! check_iso_permissions "$win11_iso" "Windows 11 ISO"; then
+        pause_for_user
+        return 1
+    fi
+
+    if ! check_iso_permissions "$virtio_iso" "VirtIO ISO"; then
+        pause_for_user
+        return 1
+    fi
+
+    show_success "Permission check passed"
+
+    # Step 3: Shared Folder (Optional)
+    echo ""
+    show_section "Step 3: Shared Folder (Optional)"
+
+    show_info "You can share a host folder with the VM (read-write access)"
+    echo ""
+
+    local share_path=""
+    if gum confirm "Configure shared folder now?"; then
+        echo ""
+        echo "Enter host folder path to share:"
+        # Detect user's Documents folder dynamically (XDG-compliant)
+        local default_docs_dir
+        if command -v xdg-user-dir &>/dev/null; then
+            default_docs_dir="$(xdg-user-dir DOCUMENTS 2>/dev/null)"
+        fi
+        default_docs_dir="${default_docs_dir:-$HOME/Documents}"
+        share_path=$(gum input --placeholder "$default_docs_dir" --value "$default_docs_dir")
+
+        if [ -d "$share_path" ]; then
+            show_success "Will share: $share_path"
+        else
+            show_warning "Directory not found: $share_path"
+            show_info "You can configure this later via File Sharing menu"
+            share_path=""
+        fi
+    else
+        show_info "Skipped. You can configure this later via File Sharing menu"
+    fi
 
     # Step 4: Confirmation
     echo ""
+    local share_summary=""
+    if [ -n "$share_path" ]; then
+        share_summary="
+Shared:    $share_path (read-write)"
+    fi
+
     show_section "VM Configuration Summary:
 
 Name:      $vm_name
 RAM:       ${ram_gb}GB
 CPUs:      $cpus cores
 Disk:      ${disk_gb}GB
+VRAM:      ${vram_mb}MB
 Win11 ISO: $win11_iso
-VirtIO:    $virtio_iso
+VirtIO:    $virtio_iso$share_summary
 
 Machine:   Q35 chipset
 Firmware:  UEFI (OVMF)
 TPM:       2.0 (required for Windows 11)
 Storage:   VirtIO (high performance)
-Network:   VirtIO NAT"
+Network:   VirtIO NAT
+Clipboard: Enabled (SPICE)"
 
     if ! gum confirm "Create VM with these settings?"; then
         show_info "VM creation cancelled."
@@ -678,6 +835,7 @@ vm_name=$vm_name
 ram_gb=$ram_gb
 cpus=$cpus
 disk_gb=$disk_gb
+vram_mb=$vram_mb
 win11_iso=$win11_iso
 virtio_iso=$virtio_iso
 created_date=$(date +%Y-%m-%d)
@@ -695,8 +853,9 @@ EOF
         --boot uefi \
         --tpm backend.type=emulator,backend.version=2.0,model=tpm-crb \
         --network network=default,model=virtio \
-        --video virtio \
+        --video virtio,model.vram=$((vram_mb * 1024)) \
         --graphics spice \
+        --channel spicevmc,target.type=virtio,target.name=com.redhat.spice.0 \
         --noautoconsole; then
 
         echo ""
@@ -704,9 +863,43 @@ EOF
         save_state "vm_created" "true"
         save_state "vm_name" "$vm_name"
 
+        # Auto-configure shared folder if requested
+        if [ -n "$share_path" ]; then
+            echo ""
+            show_info "Configuring shared folder (read-write mode)..."
+            if "$SCRIPT_DIR/setup-virtio-fs.sh" --vm "$vm_name" --source "$share_path" --readwrite --noninteractive 2>/dev/null; then
+                show_success "Shared folder configured!"
+                show_info "After Windows install, install WinFsp + virtio-fs driver to access"
+                save_state "share_path" "$share_path"
+            else
+                show_warning "Shared folder setup deferred - configure after Windows install"
+                save_state "share_path_pending" "$share_path"
+            fi
+        fi
+
+        echo ""
+        gum style --border rounded --border-foreground 212 --padding "1 2" --margin "1 0" \
+            "POST-INSTALLATION CHECKLIST (after Windows setup):" \
+            "" \
+            "1. Install VirtIO GPU Driver (for high resolution):" \
+            "   - Device Manager → Display adapters" \
+            "   - Right-click 'Microsoft Basic Display Adapter'" \
+            "   - Update driver → Browse → D:\\viogpudo\\w11\\amd64\\" \
+            "   - Reboot Windows" \
+            "" \
+            "2. Install SPICE Guest Tools (clipboard & auto-resize):" \
+            "   - Download from: spice-space.org/download.html" \
+            "" \
+            "3. (Optional) VirtIO-FS for file sharing:" \
+            "   - Install WinFsp + virtio-fs driver" \
+            "   - Configure via File Sharing menu"
+
         echo ""
         show_info "Opening virt-manager for Windows installation..."
         show_info "During Windows installation, load VirtIO drivers from the second CD."
+        if [ -n "$share_path" ]; then
+            show_info "After install: Setup WinFsp + virtio-fs for shared folder access"
+        fi
 
         sleep 2
         virt-manager --connect qemu:///system --show-domain-console "$vm_name" &

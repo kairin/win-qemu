@@ -80,8 +80,30 @@ readonly LOG_DIR="/var/log/win-qemu"
 readonly LOG_FILE="$LOG_DIR/setup-virtio-fs.log"
 readonly TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 
+# Get user home directory (works correctly with sudo)
+_get_user_home() {
+    if [[ -n "${SUDO_USER:-}" ]]; then
+        eval echo "~$SUDO_USER"
+    else
+        echo "$HOME"
+    fi
+}
+
+# Get XDG Documents folder with fallback
+_get_documents_dir() {
+    local xdg_docs=""
+    if command -v xdg-user-dir &>/dev/null; then
+        xdg_docs="$(xdg-user-dir DOCUMENTS 2>/dev/null)"
+    fi
+    if [[ -n "$xdg_docs" && -d "$xdg_docs" ]]; then
+        echo "$xdg_docs"
+    else
+        echo "$(_get_user_home)/Documents"
+    fi
+}
+
 # Default configuration
-DEFAULT_SOURCE_DIR="/home/user/outlook-data"
+DEFAULT_SOURCE_DIR="$(_get_documents_dir)"
 DEFAULT_TARGET_TAG="outlook-share"
 DEFAULT_QUEUE_SIZE="1024"
 
@@ -94,6 +116,8 @@ QUEUE_SIZE="$DEFAULT_QUEUE_SIZE"
 # Operational flags
 DRY_RUN=false
 FORCE=false
+NONINTERACTIVE=false
+READWRITE=false
 BACKUP_FILE=""
 
 
@@ -238,6 +262,15 @@ parse_arguments() {
                 ;;
             --force)
                 FORCE=true
+                shift
+                ;;
+            --noninteractive)
+                NONINTERACTIVE=true
+                FORCE=true  # Non-interactive implies force
+                shift
+                ;;
+            --readwrite|--rw)
+                READWRITE=true
                 shift
                 ;;
             --help|-h)
@@ -507,15 +540,25 @@ generate_virtiofs_xml() {
     log_info "Generating virtio-fs device configuration..."
 
     local temp_xml="/tmp/virtiofs-${VM_NAME}-${TIMESTAMP}.xml"
+    local readonly_tag="  <readonly/>"
+
+    # If read-write mode requested, omit the readonly tag
+    if [[ "$READWRITE" == true ]]; then
+        readonly_tag=""
+        log_warning "Read-write mode enabled - VM will have full access to shared folder"
+    fi
 
     cat > "$temp_xml" << EOF
 <filesystem type='mount' accessmode='passthrough'>
   <driver type='virtiofs' queue='$QUEUE_SIZE'/>
   <source dir='$SOURCE_DIR'/>
   <target dir='$TARGET_TAG'/>
-  <readonly/>
+${readonly_tag}
 </filesystem>
 EOF
+
+    # Clean up empty lines from the XML if readonly tag was omitted
+    sed -i '/^$/d' "$temp_xml"
 
     log_success "Configuration generated: $temp_xml"
 
@@ -589,11 +632,15 @@ verify_virtiofs_config() {
         error_exit "VirtIO-FS configuration not found in VM XML after attachment"
     fi
 
-    # Check for read-only tag
-    if ! virsh dumpxml "$VM_NAME" | grep -A 5 "type='virtiofs'" | grep -q "<readonly/>"; then
-        log_error "CRITICAL: <readonly/> tag not found in virtio-fs configuration!"
-        log_error "This is a SECURITY RISK - guest can write to host files"
-        error_exit "Configuration validation failed - read-only mode not enforced"
+    # Check for read-only tag (skip if read-write mode was explicitly requested)
+    if [[ "$READWRITE" != true ]]; then
+        if ! virsh dumpxml "$VM_NAME" | grep -A 5 "type='virtiofs'" | grep -q "<readonly/>"; then
+            log_error "CRITICAL: <readonly/> tag not found in virtio-fs configuration!"
+            log_error "This is a SECURITY RISK - guest can write to host files"
+            error_exit "Configuration validation failed - read-only mode not enforced"
+        fi
+    else
+        log_warning "Read-write mode: VM has full access to shared folder"
     fi
 
     log_success "VirtIO-FS configuration verified successfully"

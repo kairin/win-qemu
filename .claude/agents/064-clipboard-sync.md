@@ -11,7 +11,7 @@ Enable clipboard sharing via spice-vdagent.
 ```xml
 <!-- VM XML clipboard channel -->
 <channel type='spicevmc'>
-  <target type='vdagent' name='com.redhat.spice.0'/>
+  <target type='virtio' name='com.redhat.spice.0'/>
 </channel>
 
 <!-- Graphics with clipboard -->

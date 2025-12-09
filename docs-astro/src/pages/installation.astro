@@ -136,6 +136,70 @@ wget https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-vir
     />
   </section>
 
+  <!-- Step 6 -->
+  <section class="mt-12 fade-in">
+    <h3 class="font-display text-lg font-semibold text-base-content">Step 6: Post-Installation Driver Setup</h3>
+    <p class="mt-2 text-sm/6 text-base-content/70">
+      After Windows 11 installation completes, install VirtIO drivers for optimal performance.
+    </p>
+
+    <div class="mt-4 rounded-xl bg-warning/10 p-4 ring-1 ring-warning/20">
+      <h4 class="font-semibold text-warning">Important: Display Resolution Fix</h4>
+      <p class="mt-1 text-sm text-base-content/70">
+        Windows will initially show only 1280x800 resolution because it uses "Microsoft Basic Display Adapter".
+        Install the VirtIO GPU driver to enable resolutions up to 4K.
+      </p>
+    </div>
+
+    <div class="mt-6">
+      <h4 class="font-semibold">VirtIO GPU Driver Installation</h4>
+      <ol class="mt-2 list-decimal list-inside text-sm/6 text-base-content/70">
+        <li>Open Device Manager (Win+X, select Device Manager)</li>
+        <li>Expand "Display adapters"</li>
+        <li>Right-click "Microsoft Basic Display Adapter"</li>
+        <li>Select "Update driver" → "Browse my computer for drivers"</li>
+        <li>Navigate to: <code class="bg-base-300 px-1 rounded-sm">D:\viogpudo\w11\amd64\</code></li>
+        <li>Click "Next" and allow driver installation</li>
+        <li>Reboot Windows</li>
+      </ol>
+    </div>
+
+    <div class="mt-6 overflow-x-auto">
+      <h4 class="font-semibold mb-2">VRAM vs Maximum Resolution</h4>
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="border-b border-base-content/10">
+            <th class="py-2 pr-4 font-semibold">VRAM Allocation</th>
+            <th class="py-2 font-semibold">Maximum Resolution</th>
+          </tr>
+        </thead>
+        <tbody class="text-base-content/80">
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">64 MB</td>
+            <td class="py-2">1920x1080 (Full HD)</td>
+          </tr>
+          <tr class="border-b border-base-content/5">
+            <td class="py-2 pr-4">256 MB</td>
+            <td class="py-2">3840x2160 (4K)</td>
+          </tr>
+          <tr>
+            <td class="py-2 pr-4">1 GB+</td>
+            <td class="py-2">Multiple 4K displays</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-6 rounded-xl bg-info/10 p-4 ring-1 ring-info/20">
+      <h4 class="font-semibold text-info">Additional Recommended Drivers</h4>
+      <ul class="mt-2 text-sm/6 text-base-content/70 list-disc list-inside">
+        <li><strong>SPICE Guest Tools</strong> - Enables clipboard sharing and auto-resize</li>
+        <li><strong>VirtIO-FS</strong> - For shared folder access between host and guest</li>
+        <li><strong>QEMU Guest Agent</strong> - For host-guest communication</li>
+      </ul>
+    </div>
+  </section>
+
   <!-- Next Steps -->
   <section class="mt-12 fade-in">
     <h3 class="font-display text-lg font-semibold text-base-content">Next Steps</h3>

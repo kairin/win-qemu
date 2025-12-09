@@ -402,19 +402,18 @@
     <!--
       Graphics Configuration
 
-      Type: VNC (Virtual Network Computing)
-      - Remote desktop protocol for VM console access
+      Type: SPICE (Simple Protocol for Independent Computing Environments)
+      - Better performance than VNC with clipboard sharing
+      - OpenGL hardware acceleration enabled for smooth graphics
       - Listen on 127.0.0.1 (localhost only, secure)
-      - Port auto-assigned (-1)
       - Access via: virt-viewer VM_NAME or virt-manager
 
-      Alternative: SPICE (better performance, clipboard sharing)
-      <graphics type='spice' autoport='yes'>
+      Alternative: VNC (simpler, wider compatibility)
+      <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1'>
         <listen type='address' address='127.0.0.1'/>
-        <image compression='off'/>
       </graphics>
     -->
-    <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1'>
+    <graphics type='spice' autoport='yes' listen='127.0.0.1'>
       <listen type='address' address='127.0.0.1'/>
     </graphics>
 
@@ -433,9 +432,7 @@
       <model type='qxl' vram='65536' heads='1'/>
     -->
     <video>
-      <model type='virtio' vram='16384' heads='1'>
-        <acceleration accel3d='no'/>
-      </model>
+      <model type='virtio' heads='1' primary='yes' vram='262144'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x0'/>
     </video>
 

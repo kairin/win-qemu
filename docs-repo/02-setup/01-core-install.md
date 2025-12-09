@@ -62,6 +62,27 @@ This configuration creates a high-performance VM, but Windows 11 does not have V
 8. Click "Next." The installer will load the VirtIO storage driver, and the virtual disk will appear.
 9. **Post-Installation:** After Windows 11 is installed, open "Device Manager." There will be several "Unknown devices" (e.g., "Ethernet Controller," "PCI Simple Communications Controller"). For each one, right-click, select "Update driver," "Browse my computer," and point it to the root of the VirtIO CD-ROM. Windows will automatically find and install all remaining drivers.
 
+## **4.3.1. VirtIO GPU Driver Installation (Critical for Resolution)**
+
+After Windows installation, the display will be limited to 1280x800 resolution because Windows uses the generic "Microsoft Basic Display Adapter" instead of the VirtIO GPU driver. This step is **essential** for high-resolution display support.
+
+1. **Open Device Manager** (Win+X → Device Manager)
+2. **Expand "Display adapters"** - You will see "Microsoft Basic Display Adapter"
+3. **Right-click** the adapter and select **"Update driver"**
+4. **Choose "Browse my computer for drivers"**
+5. **Navigate to:** `D:\viogpudo\w11\amd64\` (VirtIO CD-ROM)
+6. **Click "Next"** and allow the driver installation
+7. **Reboot Windows**
+
+After reboot, Device Manager should show "Red Hat VirtIO GPU DOD controller" and Display Settings will offer multiple resolution options up to 4K (depending on VRAM allocation).
+
+**Troubleshooting:**
+| Issue | Solution |
+|-------|----------|
+| Driver folder not found | Verify VirtIO ISO is mounted; check drive letter |
+| Still limited resolution | Increase VM VRAM allocation in libvirt config |
+| viogpudo folder missing | Download latest VirtIO ISO from Fedora |
+
 ## **4.4. Performance Tuning and Host-Guest Optimization**
 
 A default Windows 11 KVM install can be unstable or suffer from high CPU usage and poor GUI performance. The following post-installation tuning steps are *essential* for a stable, desktop-class experience.

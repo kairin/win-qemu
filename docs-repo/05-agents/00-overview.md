@@ -1,6 +1,6 @@
 # Win-QEMU Agent System
 
-**Version**: 1.0.0 | **Status**: Production Ready | **Agents**: 14
+**Version**: 1.1.0 | **Status**: Production Ready | **Agents**: 85
 
 ---
 
@@ -9,17 +9,15 @@
 | Need | Document |
 |------|----------|
 | **Getting Started** | This file |
-| **Common Workflows** | [WORKFLOWS.md](WORKFLOWS.md) |
-| **Complete Reference** | [AGENTS-REFERENCE.md](AGENTS-REFERENCE.md) |
-| **Implementation History** | [IMPLEMENTATION-HISTORY.md](IMPLEMENTATION-HISTORY.md) |
-| **Health-Checker Decision** | [HEALTH-CHECKER-EXECUTIVE-SUMMARY.md](HEALTH-CHECKER-EXECUTIVE-SUMMARY.md) |
-| **Full Navigation** | [INDEX.md](INDEX.md) |
+| **Agent System Architecture** | [../06-constitutional/04-agent-system.md](../06-constitutional/04-agent-system.md) |
+| **Complete Reference** | [01-agents-reference.md](01-agents-reference.md) |
+| **Workflow Patterns** | [02-workflows.md](02-workflows.md) |
 
 ---
 
 ## Overview
 
-The win-qemu agent system automates QEMU/KVM Windows virtualization on Ubuntu with near-native performance (85-95%). It consists of 14 specialized agents handling everything from VM lifecycle to security hardening.
+The win-qemu agent system automates QEMU/KVM Windows virtualization on Ubuntu with near-native performance (85-95%). It consists of **85 specialized agents** in a 5-tier hierarchy handling everything from VM lifecycle to security hardening.
 
 **Key Benefits**:
 - 87.7% time savings through parallel execution
@@ -162,10 +160,11 @@ sudo systemctl enable --now libvirtd
 ## Documentation References
 
 - **Constitutional Requirements**: `CLAUDE.md` (AGENTS.md symlink)
-- **VM Setup Guide**: `outlook-linux-guide/05-qemu-kvm-reference-architecture.md`
-- **Performance Tuning**: `outlook-linux-guide/09-performance-optimization-playbook.md`
-- **Security Checklist**: `research/06-security-hardening-analysis.md`
+- **VM Setup Guide**: `docs-repo/02-setup/01-core-install.md`
+- **Performance Tuning**: See [Performance page](../../docs-astro/src/pages/performance.astro)
+- **Security Checklist**: `docs-repo/03-ops/01-security.md`
+- **Agent System Architecture**: `docs-repo/06-constitutional/04-agent-system.md`
 
 ---
 
-**Created**: 2025-11-17 | **Maintainer**: AI Assistants + User
+**Created**: 2025-11-17 | **Updated**: 2025-12-09 | **Maintainer**: AI Assistants + User
